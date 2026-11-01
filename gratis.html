@@ -1013,18 +1013,10 @@ window.openViewCodeModal = function() {
     `);
 };
 
-window.copyModalCode = async function() {
-    const code = document.getElementById('modal-code-text')?.textContent || '';
-    const success = await copyText(code);
-    showNotice(
-        success ? 'CÓDIGO COPIADO' : 'ERROR',
-        success ? 'Código copiado correctamente.' : 'No se pudo copiar.'
-    );
-};
-
 window.openVisualizationModal = function() {
     const project = window.activeFreeProject;
     if (!project) return;
+
     const preview = project.animacionHtml || project.codigo;
     if (!preview.trim()) {
         showNotice('VISTA NO DISPONIBLE', 'Este proyecto no contiene una vista previa.');
@@ -1039,9 +1031,11 @@ window.openVisualizationModal = function() {
                 <h3 class="text-white text-xs sm:text-sm truncate ml-4">${escapeHtml(project.title)}</h3>
             </div>
             <iframe
-    id="project-preview-frame"
-    class="w-full flex-1 bg-white rounded-lg"
-    sandbox="allow-scripts allow-forms allow-modals allow-same-origin"
+                id="project-preview-frame"
+                class="w-full flex-1 bg-white rounded-lg"
+                style="width:100%; height:100%; border:0;"
+                sandbox="allow-scripts allow-forms allow-modals allow-same-origin"
+                allow="camera; microphone; display-capture; geolocation"
                 title="Vista previa del proyecto"
             ></iframe>
         </div>
