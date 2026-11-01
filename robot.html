@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAFAEL-CODEX · 3D ROBOT</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      overflow: hidden;
+      background: #03040A;
+      font-family: 'Inter', sans-serif;
+    }
+    #robot-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      display: block;
+    }
+    #robot-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: pointer;
+    }
+    /* Botones de acción */
+    .robot-actions {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      z-index: 20;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .robot-actions button {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 9px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      background: rgba(7, 11, 24, 0.85);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition: all 0.25s ease;
+      border: 1.5px solid;
+    }
+    .btn-wave {
+      border-color: #00E5FF;
+      color: #00E5FF;
+      box-shadow: 0 0 12px rgba(0, 229, 255, 0.35);
+    }
+    .btn-wave:hover {
+      background: rgba(0, 229, 255, 0.2);
+      box-shadow: 0 0 22px rgba(0, 229, 255, 0.75);
+      transform: translateY(-2px);
+    }
+    .btn-dance {
+      border-color: #B34CFF;
+      color: #B34CFF;
+      box-shadow: 0 0 12px rgba(179, 76, 255, 0.35);
+    }
+    .btn-dance:hover {
+      background: rgba(179, 76, 255, 0.2);
+      box-shadow: 0 0 22px rgba(179, 76, 255, 0.75);
+      transform: translateY(-2px);
+    }
+    .btn-celebrate {
+      border-color: #FF8500;
+      color: #FF8500;
+      box-shadow: 0 0 12px rgba(255, 133, 0, 0.35);
+    }
+    .btn-celebrate:hover {
+      background: rgba(255, 133, 0, 0.2);
+      box-shadow: 0 0 22px rgba(255, 133, 0, 0.75);
+      transform: translateY(-2px);
+    }
+    @media (max-width: 480px) {
+      .robot-actions {
+        top: 16px;
+        left: 16px;
+        gap: 6px;
+      }
+      .robot-actions button {
+        font-size: 9px;
+        padding: 7px 12px;
+      }
+    }
+  </style>
+  <!-- Three.js & GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="robot-container">
+    <canvas id="robot-canvas"></canvas>
+
+    <!-- Botones de acción del robot -->
+    <div class="robot-actions">
+      <button class="btn-wave" onclick="triggerRobotAction('wave')">👋 SALUDAR</button>
+      <button class="btn-dance" onclick="triggerRobotAction('dance')">💃 BAILAR</button>
+      <button class="btn-celebrate" onclick="triggerRobotAction('celebrate')">✨ CELEBRAR</button>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // ----------------------------------------------------------------------
+      // 1. SCENE SETUP (CONSERVADO EXACTAMENTE)
+      // ----------------------------------------------------------------------
+      const canvas = document.getElementById('robot-canvas');
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x03040A);
+
+      const camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 0.6, 9.2);
+      camera.lookAt(0, 0.3, 0);
+
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.2;
+
+      // ----------------------------------------------------------------------
+      // 2. LIGHTING (CONSERVADO EXACTAMENTE)
+      // ----------------------------------------------------------------------
+      const ambientLight = new THREE.AmbientLight(0xdce8ff, 0.85);
+      scene.add(ambientLight);
+
+      const mainKeyLight = new THREE.DirectionalLight(0xffffff, 1.45);
+      mainKeyLight.position.set(1.5, 5.5, 6.5);
+      mainKeyLight.castShadow = true;
+      scene.add(mainKeyLight);
+
+      const cyanRimLight = new THREE.PointLight(0x00e5ff, 3.2, 12);
+      cyanRimLight.position.set(3.8, 1.5, 2.2);
+      scene.add(cyanRimLight);
+
+      const orangeRimLight = new THREE.PointLight(0xff8500, 2.4, 10);
+      orangeRimLight.position.set(-3.2, 3.0, 2.5);
+      scene.add(orangeRimLight);
+
+      const purpleFillLight = new THREE.PointLight(0x9d00ff, 2.6, 10);
+      purpleFillLight.position.set(-3.0, -1.2, 3.0);
+      scene.add(purpleFillLight);
+
+      // ----------------------------------------------------------------------
+      // 3. MATERIALS (CONSERVADO EXACTAMENTE)
+      // ----------------------------------------------------------------------
+      const whiteArmorMat = new THREE.MeshPhysicalMaterial({
+        color: 0xf1f3f8,
+        roughness: 0.15,
+        metalness: 0.08,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1
+      });
+
+      const silverMat = new THREE.MeshStandardMaterial({
+        color: 0xbfc7d5,
+        roughness: 0.25,
+        metalness: 0.78
+      });
+
+      const darkJointMat = new THREE.MeshStandardMaterial({
+        color: 0x101522,
+        roughness: 0.35,
+        metalness: 0.65
+      });
+
+      const faceScreenMat = new THREE.MeshPhysicalMaterial({
+        color: 0x050713,
+        roughness: 0.05,
+        metalness: 0.1,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.04
+      });
+
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const cyanNeonMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+      const orangeNeonMat = new THREE.MeshBasicMaterial({ color: 0xff8500 });
+
+      // ----------------------------------------------------------------------
+      // 4. UTILITY FUNCTIONS (CONSERVADO EXACTAMENTE)
+      // ----------------------------------------------------------------------
+      function createRoundedBox(width, height, depth, radius, smoothness = 6) {
+        const shape = new THREE.Shape();
+        const eps = 0.00001;
+        const r = radius - eps;
+        shape.absarc(eps, eps, eps, -Math.PI / 2, -Math.PI, true);
+        shape.absarc(eps, height - r * 2, eps, Math.PI, Math.PI / 2, true);
+        shape.absarc(width - r * 2, height - r * 2, eps, Math.PI / 2, 0, true);
+        shape.absarc(width - r * 2, eps, eps, 0, -Math.PI / 2, true);
+
+        const geometry = new THREE.ExtrudeGeometry(shape, {
+          depth: depth - radius * 2,
+          bevelEnabled: true,
+          bevelSegments: smoothness * 2,
+          steps: 1,
+          bevelSize: r,
+          bevelThickness: radius,
+          curveSegments: smoothness
+        });
+        geometry.center();
+        return geometry;
+      }
+
+      function createMulticolorLEDTexture() {
+        const c = document.createElement('canvas');
+        c.width = 512;
+        c.height = 512;
+        const ctx = c.getContext('2d');
+
+        const grad = ctx.createLinearGradient(0, 0, 512, 512);
+        grad.addColorStop(0.0, '#FF9500');
+        grad.addColorStop(0.25, '#FF20C8');
+        grad.addColorStop(0.55, '#9D00FF');
+        grad.addColorStop(0.82, '#00E5FF');
+        grad.addColorStop(1.0, '#00F0FF');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 512);
+
+        const radOrange = ctx.createRadialGradient(110, 90, 10, 110, 90, 260);
+        radOrange.addColorStop(0, 'rgba(255, 165, 0, 1)');
+        radOrange.addColorStop(0.5, 'rgba(255, 120, 0, 0.6)');
+        radOrange.addColorStop(1, 'rgba(255, 120, 0, 0)');
+        ctx.fillStyle = radOrange;
+        ctx.fillRect(0, 0, 512, 512);
+
+        const radPink = ctx.createRadialGradient(100, 420, 10, 100, 420, 240);
+        radPink.addColorStop(0, 'rgba(255, 32, 200, 1)');
+        radPink.addColorStop(1, 'rgba(255, 32, 200, 0)');
+        ctx.fillStyle = radPink;
+        ctx.fillRect(0, 0, 512, 512);
+
+        const radCyan = ctx.createRadialGradient(430, 250, 20, 430, 250, 280);
+        radCyan.addColorStop(0, 'rgba(0, 229, 255, 1)');
+        radCyan.addColorStop(1, 'rgba(0, 229, 255, 0)');
+        ctx.fillStyle = radCyan;
+        ctx.fillRect(0, 0, 512, 512);
+
+        const texture = new THREE.CanvasTexture(c);
+        texture.needsUpdate = true;
+        return texture;
+      }
+
+      function createChestEmblemTexture() {
+        const c = document.createElement('canvas');
+        c.width = 256;
+        c.height = 256;
+        const ctx = c.getContext('2d');
+
+        ctx.fillStyle = '#050713';
+        ctx.fillRect(0, 0, 256, 256);
+        ctx.strokeStyle = '#00E5FF';
+        ctx.lineWidth = 8;
+        ctx.strokeRect(14, 14, 228, 228);
+
+        const grad = ctx.createLinearGradient(50, 40, 200, 210);
+        grad.addColorStop(0, '#00E5FF');
+        grad.addColorStop(0.5, '#B34CFF');
+        grad.addColorStop(1, '#FF20C8');
+
+        ctx.shadowColor = '#00E5FF';
+        ctx.shadowBlur = 18;
+        ctx.fillStyle = grad;
+        ctx.font = '900 155px "Orbitron", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('R', 128, 136);
+
+        return new THREE.CanvasTexture(c);
+      }
+
+      function createRoundedRectFrame(w, h, r, tubeRadius) {
+        const path = new THREE.Path();
+        const hw = w / 2 - r;
+        const hh = h / 2 - r;
+
+        path.moveTo(-hw, -h / 2);
+        path.lineTo(hw, -h / 2);
+        path.absarc(hw, -hh, r, -Math.PI / 2, 0, false);
+        path.lineTo(w / 2, hh);
+        path.absarc(hw, hh, r, 0, Math.PI / 2, false);
+        path.lineTo(-hw, h / 2);
+        path.absarc(-hw, hh, r, Math.PI / 2, Math.PI, false);
+        path.lineTo(-w / 2, -hh);
+        path.absarc(-hw, -hh, r, Math.PI, Math.PI * 1.5, false);
+
+        const points = path.getPoints(64);
+        const curve3D = new THREE.CatmullRomCurve3(
+          points.map(p => new THREE.Vector3(p.x, p.y, 0)),
+          true
+        );
+        const geom = new THREE.TubeGeometry(curve3D, 100, tubeRadius, 16, true);
+
+        const pos = geom.attributes.position;
+        const uvs = new Float32Array(pos.count * 2);
+        for (let i = 0; i < pos.count; i++) {
+          const vx = pos.getX(i);
+          const vy = pos.getY(i);
+          uvs[i * 2] = (vx + w / 2) / w;
+          uvs[i * 2 + 1] = 1.0 - (vy + h / 2) / h;
+        }
+        geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+        return geom;
+      }
+
+      function lerp(a, b, t) { return a + (b - a) * t; }
+      function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
+
+      // ----------------------------------------------------------------------
+      // 5. BUILD THE 3D ROBOT (MODELO Y JERARQUÍA CONSERVADOS EXACTAMENTE)
+      // ----------------------------------------------------------------------
+      let clock = new THREE.Clock();
+      let robotRoot, pelvisGroup, torsoGroup, neckGroup, headGroup;
+      let leftEye, rightEye, ledRimMat, ledGlowMat, chestLogoMat;
+      let rightShoulder, rightElbow, rightWrist, rightFingers = [], rightThumb;
+      let leftShoulder, leftElbow, leftWrist, leftFingers = [], leftThumb;
+      let rightHip, rightKnee, rightAnkle;
+      let leftHip, leftKnee, leftAnkle;
+      let platformGroup, topCyanRing, innerCyanRing, particleSystem;
+
+      // ---- ROOT ----
+      robotRoot = new THREE.Group();
+      robotRoot.rotation.y = 0.16;
+      robotRoot.position.y = 0.28;
+      scene.add(robotRoot);
+
+      // ---- PELVIS ----
+      pelvisGroup = new THREE.Group();
+      pelvisGroup.position.set(0, -0.32, 0);
+      robotRoot.add(pelvisGroup);
+
+      const waistCore = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.28, 0.32, 24), darkJointMat);
+      waistCore.position.y = 0.22;
+      pelvisGroup.add(waistCore);
+
+      const waistRing = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.03, 12, 32), silverMat);
+      waistRing.rotation.x = Math.PI / 2;
+      waistRing.position.y = 0.2;
+      pelvisGroup.add(waistRing);
+
+      const pelvisArmor = new THREE.Mesh(createRoundedBox(0.78, 0.34, 0.56, 0.12), whiteArmorMat);
+      pelvisGroup.add(pelvisArmor);
+
+      const pelvisCenter = new THREE.Mesh(createRoundedBox(0.28, 0.36, 0.6, 0.06), darkJointMat);
+      pelvisGroup.add(pelvisCenter);
+
+      // ---- TORSO ----
+      torsoGroup = new THREE.Group();
+      torsoGroup.position.set(0, 0.42, 0);
+      pelvisGroup.add(torsoGroup);
+
+      const chestArmor = new THREE.Mesh(createRoundedBox(1.06, 0.78, 0.68, 0.2), whiteArmorMat);
+      chestArmor.position.y = 0.14;
+      torsoGroup.add(chestArmor);
+
+      const collarTrim = new THREE.Mesh(createRoundedBox(0.72, 0.16, 0.52, 0.06), silverMat);
+      collarTrim.position.set(0, 0.52, 0);
+      torsoGroup.add(collarTrim);
+
+      const chestFrame = new THREE.Mesh(createRoundedBox(0.42, 0.42, 0.08, 0.08), darkJointMat);
+      chestFrame.position.set(0, 0.15, 0.33);
+      torsoGroup.add(chestFrame);
+
+      chestLogoMat = new THREE.MeshBasicMaterial({ map: createChestEmblemTexture() });
+      const chestScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.34), chestLogoMat);
+      chestScreen.position.set(0, 0.15, 0.375);
+      torsoGroup.add(chestScreen);
+
+      const leftChestLed = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.035, 0.02), cyanNeonMat);
+      leftChestLed.position.set(-0.34, 0.34, 0.34);
+      leftChestLed.rotation.z = 0.25;
+      torsoGroup.add(leftChestLed);
+
+      const rightChestLed = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.035, 0.02), cyanNeonMat);
+      rightChestLed.position.set(0.34, 0.34, 0.34);
+      rightChestLed.rotation.z = -0.25;
+      torsoGroup.add(rightChestLed);
+
+      // ---- NECK & HEAD ----
+      neckGroup = new THREE.Group();
+      neckGroup.position.set(0, 0.6, 0);
+      torsoGroup.add(neckGroup);
+
+      const neckJoint = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.22, 20), darkJointMat);
+      neckGroup.add(neckJoint);
+
+      headGroup = new THREE.Group();
+      headGroup.position.set(0, 0.72, 0);
+      headGroup.rotation.z = -0.05;
+      headGroup.rotation.y = 0.12;
+      neckGroup.add(headGroup);
+
+      const helmetOuter = new THREE.Mesh(createRoundedBox(1.86, 1.44, 1.36, 0.42, 8), whiteArmorMat);
+      headGroup.add(helmetOuter);
+
+      const foreheadCrest = new THREE.Mesh(createRoundedBox(0.55, 0.14, 0.75, 0.05), silverMat);
+      foreheadCrest.position.set(0, 0.71, 0.12);
+      headGroup.add(foreheadCrest);
+
+      const visorRecess = new THREE.Mesh(createRoundedBox(1.52, 1.12, 0.18, 0.28), darkJointMat);
+      visorRecess.position.set(0, -0.02, 0.61);
+      headGroup.add(visorRecess);
+
+      const faceScreen = new THREE.Mesh(createRoundedBox(1.40, 1.00, 0.12, 0.24), faceScreenMat);
+      faceScreen.position.set(0, -0.02, 0.66);
+      headGroup.add(faceScreen);
+
+      // LED rim
+      const ledTexture = createMulticolorLEDTexture();
+      ledRimMat = new THREE.MeshBasicMaterial({ map: ledTexture });
+      const ledFrameGeom = createRoundedRectFrame(1.44, 1.04, 0.24, 0.048);
+      const ledFrameMesh = new THREE.Mesh(ledFrameGeom, ledRimMat);
+      ledFrameMesh.position.set(0, -0.02, 0.72);
+      headGroup.add(ledFrameMesh);
+
+      const ledGlowGeom = createRoundedRectFrame(1.46, 1.06, 0.24, 0.075);
+      ledGlowMat = new THREE.MeshBasicMaterial({
+        map: ledTexture,
+        transparent: true,
+        opacity: 0.38,
+        blending: THREE.AdditiveBlending
+      });
+      const ledGlowMesh = new THREE.Mesh(ledGlowGeom, ledGlowMat);
+      ledGlowMesh.position.set(0, -0.02, 0.71);
+      headGroup.add(ledGlowMesh);
+
+      // Eyes
+      const eyeGeom = createRoundedBox(0.18, 0.34, 0.04, 0.08);
+      leftEye = new THREE.Mesh(eyeGeom, eyeMat);
+      leftEye.position.set(-0.26, -0.02, 0.73);
+      headGroup.add(leftEye);
+
+      rightEye = new THREE.Mesh(eyeGeom, eyeMat);
+      rightEye.position.set(0.26, -0.02, 0.73);
+      headGroup.add(rightEye);
+
+      // Ear modules
+      function createEarModule(side) {
+        const earGroup = new THREE.Group();
+        earGroup.position.set(side * 0.94, 0.0, 0.0);
+        earGroup.rotation.z = side * Math.PI / 2;
+
+        const baseCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.46, 0.18, 32), silverMat);
+        earGroup.add(baseCyl);
+
+        const innerHub = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.22, 24), darkJointMat);
+        earGroup.add(innerHub);
+
+        const neonEarRing = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.032, 16, 36), cyanNeonMat);
+        neonEarRing.rotation.x = Math.PI / 2;
+        neonEarRing.position.y = 0.09;
+        earGroup.add(neonEarRing);
+
+        return earGroup;
+      }
+      headGroup.add(createEarModule(-1));
+      headGroup.add(createEarModule(1));
+
+      // ---- ARMS ----
+      function createArmAssembly(side) {
+        const shoulderGroup = new THREE.Group();
+        shoulderGroup.position.set(side * 0.68, 0.34, 0);
+
+        const pauldron = new THREE.Mesh(createRoundedBox(0.38, 0.42, 0.42, 0.16), whiteArmorMat);
+        shoulderGroup.add(pauldron);
+
+        const shoulderNeon = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.02, 12, 24), cyanNeonMat);
+        shoulderNeon.rotation.y = Math.PI / 2;
+        shoulderNeon.position.x = side * 0.18;
+        shoulderGroup.add(shoulderNeon);
+
+        const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.11, 0.42, 18), darkJointMat);
+        upperArm.position.y = -0.28;
+        shoulderGroup.add(upperArm);
+
+        const elbowGroup = new THREE.Group();
+        elbowGroup.position.set(0, -0.5, 0);
+        shoulderGroup.add(elbowGroup);
+
+        const elbowSphere = new THREE.Mesh(new THREE.SphereGeometry(0.14, 18, 18), darkJointMat);
+        elbowGroup.add(elbowSphere);
+
+        const forearmArmor = new THREE.Mesh(createRoundedBox(0.28, 0.44, 0.30, 0.1), whiteArmorMat);
+        forearmArmor.position.y = -0.26;
+        elbowGroup.add(forearmArmor);
+
+        const wristNeon = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.018, 12, 24), cyanNeonMat);
+        wristNeon.rotation.x = Math.PI / 2;
+        wristNeon.position.y = -0.47;
+        elbowGroup.add(wristNeon);
+
+        const wristGroup = new THREE.Group();
+        wristGroup.position.set(0, -0.52, 0);
+        elbowGroup.add(wristGroup);
+
+        const palm = new THREE.Mesh(createRoundedBox(0.22, 0.2, 0.14, 0.05), darkJointMat);
+        palm.position.y = -0.08;
+        wristGroup.add(palm);
+
+        const palmBackPlate = new THREE.Mesh(createRoundedBox(0.2, 0.16, 0.06, 0.04), whiteArmorMat);
+        palmBackPlate.position.set(0, -0.08, 0.06);
+        wristGroup.add(palmBackPlate);
+
+        const fingersArr = [];
+        for (let f = 0; f < 4; f++) {
+          const fingerPivot = new THREE.Group();
+          const fx = (f - 1.5) * 0.052;
+          fingerPivot.position.set(fx, -0.18, 0);
+
+          const seg1 = new THREE.Mesh(createRoundedBox(0.042, 0.11, 0.045, 0.015), darkJointMat);
+          seg1.position.y = -0.04;
+          fingerPivot.add(seg1);
+
+          const seg2 = new THREE.Mesh(createRoundedBox(0.038, 0.09, 0.04, 0.012), whiteArmorMat);
+          seg2.position.y = -0.12;
+          fingerPivot.add(seg2);
+
+          wristGroup.add(fingerPivot);
+          fingersArr.push(fingerPivot);
+        }
+
+        const thumbPivot = new THREE.Group();
+        thumbPivot.position.set(side * -0.12, -0.08, 0.04);
+        thumbPivot.rotation.z = side * 0.6;
+        const thumbMesh = new THREE.Mesh(createRoundedBox(0.048, 0.12, 0.048, 0.015), whiteArmorMat);
+        thumbMesh.position.y = -0.05;
+        thumbPivot.add(thumbMesh);
+        wristGroup.add(thumbPivot);
+
+        torsoGroup.add(shoulderGroup);
+        return { shoulderGroup, elbowGroup, wristGroup, fingersArr, thumbPivot };
+      }
+
+      const rArm = createArmAssembly(-1);
+      rightShoulder = rArm.shoulderGroup;
+      rightElbow = rArm.elbowGroup;
+      rightWrist = rArm.wristGroup;
+      rightFingers = rArm.fingersArr;
+      rightThumb = rArm.thumbPivot;
+
+      rightShoulder.rotation.z = -0.42;
+      rightShoulder.rotation.x = 0.22;
+      rightElbow.rotation.x = -0.68;
+      rightElbow.rotation.z = 0.18;
+
+      const lArm = createArmAssembly(1);
+      leftShoulder = lArm.shoulderGroup;
+      leftElbow = lArm.elbowGroup;
+      leftWrist = lArm.wristGroup;
+      leftFingers = lArm.fingersArr;
+      leftThumb = lArm.thumbPivot;
+
+      leftShoulder.rotation.z = 0.58;
+      leftShoulder.rotation.x = -0.48;
+      leftElbow.rotation.x = -1.15;
+      leftElbow.rotation.y = -0.35;
+      leftWrist.rotation.x = 0.35;
+
+      // ---- LEGS ----
+      function createLegAssembly(side) {
+        const hipGroup = new THREE.Group();
+        hipGroup.position.set(side * 0.28, -0.18, 0);
+
+        const hipSphere = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), darkJointMat);
+        hipGroup.add(hipSphere);
+
+        const thighArmor = new THREE.Mesh(createRoundedBox(0.36, 0.48, 0.38, 0.12), whiteArmorMat);
+        thighArmor.position.y = -0.26;
+        hipGroup.add(thighArmor);
+
+        const kneeGroup = new THREE.Group();
+        kneeGroup.position.set(0, -0.54, 0);
+        hipGroup.add(kneeGroup);
+
+        const kneeJoint = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.34, 20), darkJointMat);
+        kneeJoint.rotation.z = Math.PI / 2;
+        kneeGroup.add(kneeJoint);
+
+        const kneeRing = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.018, 12, 24), cyanNeonMat);
+        kneeRing.rotation.y = Math.PI / 2;
+        kneeRing.position.x = side * 0.175;
+        kneeGroup.add(kneeRing);
+
+        const shinArmor = new THREE.Mesh(createRoundedBox(0.42, 0.52, 0.44, 0.14), whiteArmorMat);
+        shinArmor.position.y = -0.30;
+        kneeGroup.add(shinArmor);
+
+        const shinLed = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.02), cyanNeonMat);
+        shinLed.position.set(0, -0.28, 0.22);
+        kneeGroup.add(shinLed);
+
+        const ankleGroup = new THREE.Group();
+        ankleGroup.position.set(0, -0.60, 0);
+        kneeGroup.add(ankleGroup);
+
+        const bootMain = new THREE.Mesh(createRoundedBox(0.44, 0.26, 0.62, 0.1), whiteArmorMat);
+        bootMain.position.set(0, -0.08, 0.08);
+        ankleGroup.add(bootMain);
+
+        const bootSole = new THREE.Mesh(createRoundedBox(0.46, 0.09, 0.64, 0.03), darkJointMat);
+        bootSole.position.set(0, -0.20, 0.08);
+        ankleGroup.add(bootSole);
+
+        pelvisGroup.add(hipGroup);
+        return { hipGroup, kneeGroup, ankleGroup };
+      }
+
+      const rLeg = createLegAssembly(-1);
+      rightHip = rLeg.hipGroup;
+      rightKnee = rLeg.kneeGroup;
+      rightAnkle = rLeg.ankleGroup;
+      rightHip.rotation.x = -0.18;
+      rightHip.rotation.z = -0.08;
+      rightKnee.rotation.x = 0.35;
+      rightAnkle.rotation.x = 0.18;
+
+      const lLeg = createLegAssembly(1);
+      leftHip = lLeg.hipGroup;
+      leftKnee = lLeg.kneeGroup;
+      leftAnkle = lLeg.ankleGroup;
+      leftHip.rotation.x = -0.58;
+      leftHip.rotation.z = 0.12;
+      leftKnee.rotation.x = 0.92;
+      leftAnkle.rotation.x = 0.25;
+
+      // ---- PLATFORM ----
+      platformGroup = new THREE.Group();
+      platformGroup.position.set(0, -2.18, 0);
+      scene.add(platformGroup);
+
+      const pedestalBase = new THREE.Mesh(
+        new THREE.CylinderGeometry(2.15, 2.35, 0.36, 16),
+        new THREE.MeshStandardMaterial({ color: 0x080c18, roughness: 0.2, metalness: 0.85 })
+      );
+      platformGroup.add(pedestalBase);
+
+      topCyanRing = new THREE.Mesh(new THREE.TorusGeometry(2.05, 0.028, 16, 64), cyanNeonMat);
+      topCyanRing.rotation.x = Math.PI / 2;
+      topCyanRing.position.y = 0.19;
+      platformGroup.add(topCyanRing);
+
+      innerCyanRing = new THREE.Mesh(new THREE.TorusGeometry(1.45, 0.018, 12, 48), cyanNeonMat);
+      innerCyanRing.rotation.x = Math.PI / 2;
+      innerCyanRing.position.y = 0.19;
+      platformGroup.add(innerCyanRing);
+
+      const leftOrangeStrip = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.04, 0.06), orangeNeonMat);
+      leftOrangeStrip.position.set(-1.35, -0.02, 1.72);
+      leftOrangeStrip.rotation.y = -0.55;
+      platformGroup.add(leftOrangeStrip);
+
+      const rightOrangeStrip = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.04, 0.06), orangeNeonMat);
+      rightOrangeStrip.position.set(1.35, -0.02, 1.72);
+      rightOrangeStrip.rotation.y = 0.55;
+      platformGroup.add(rightOrangeStrip);
+
+      // ---- AMBIENT PARTICLES ----
+      const particleCount = 90;
+      const pGeom = new THREE.BufferGeometry();
+      const pPositions = new Float32Array(particleCount * 3);
+      const pColors = new Float32Array(particleCount * 3);
+      const palette = [
+        new THREE.Color(0x00e5ff),
+        new THREE.Color(0x9d00ff),
+        new THREE.Color(0xff8500),
+        new THREE.Color(0xff20c8)
+      ];
+
+      for (let i = 0; i < particleCount; i++) {
+        pPositions[i * 3] = (Math.random() - 0.5) * 7.5;
+        pPositions[i * 3 + 1] = (Math.random() - 0.5) * 5.5;
+        pPositions[i * 3 + 2] = (Math.random() - 0.5) * 4.0;
+        const c = palette[i % palette.length];
+        pColors[i * 3] = c.r;
+        pColors[i * 3 + 1] = c.g;
+        pColors[i * 3 + 2] = c.b;
+      }
+      pGeom.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
+      pGeom.setAttribute('color', new THREE.BufferAttribute(pColors, 3));
+
+      const pMat = new THREE.PointsMaterial({
+        size: 0.065,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending
+      });
+      particleSystem = new THREE.Points(pGeom, pMat);
+      scene.add(particleSystem);
+
+      // ----------------------------------------------------------------------
+      // 6. CELEBRATION VFX POOL (CONFETTI CON FÍSICA, ESTRELLAS, ENERGÍA)
+      // ----------------------------------------------------------------------
+      const vfxGroup = new THREE.Group();
+      scene.add(vfxGroup);
+
+      const confettiColors = [0x00E5FF, 0xFF8500, 0xFF20C8, 0xB34CFF, 0x00FF88, 0xFFEE00];
+      const confettiGeom = new THREE.PlaneGeometry(0.11, 0.055);
+      const starGeom = new THREE.OctahedronGeometry(0.065, 0);
+      const confettiPool = [];
+      const starPool = [];
+      const activeConfetti = [];
+      const activeStars = [];
+      const energyWaves = [];
+
+      // Pre-allocating pools to avoid GC spikes during animation frames
+      for (let i = 0; i < 85; i++) {
+        const mat = new THREE.MeshBasicMaterial({
+          color: confettiColors[i % confettiColors.length],
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0
+        });
+        const mesh = new THREE.Mesh(confettiGeom, mat);
+        mesh.visible = false;
+        vfxGroup.add(mesh);
+        confettiPool.push({
+          mesh,
+          vel: new THREE.Vector3(),
+          rotVel: new THREE.Vector3(),
+          swayPhase: Math.random() * Math.PI * 2,
+          swaySpeed: 3 + Math.random() * 4,
+          life: 0,
+          maxLife: 1
+        });
+      }
+
+      for (let i = 0; i < 36; i++) {
+        const mat = new THREE.MeshBasicMaterial({
+          color: confettiColors[i % confettiColors.length],
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending
+        });
+        const mesh = new THREE.Mesh(starGeom, mat);
+        mesh.visible = false;
+        vfxGroup.add(mesh);
+        starPool.push({
+          mesh,
+          vel: new THREE.Vector3(),
+          life: 0,
+          maxLife: 1,
+          baseScale: 0.6 + Math.random() * 0.9
+        });
+      }
+
+      for (let i = 0; i < 3; i++) {
+        const ringMat = new THREE.MeshBasicMaterial({
+          color: i % 2 === 0 ? 0x00e5ff : 0xff20c8,
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending
+        });
+        const ringMesh = new THREE.Mesh(new THREE.TorusGeometry(1.45, 0.028, 12, 64), ringMat);
+        ringMesh.rotation.x = Math.PI / 2;
+        ringMesh.position.set(0, -1.98, 0);
+        ringMesh.visible = false;
+        vfxGroup.add(ringMesh);
+        energyWaves.push(ringMesh);
+      }
+
+      function spawnCelebrationVFX(burstIntensity = 1.0) {
+        // 1. Confeti multicolor con gravedad, resistencia del aire y rotación 3D
+        const count = Math.floor(75 * burstIntensity);
+        for (let i = 0; i < count && i < confettiPool.length; i++) {
+          const c = confettiPool[i];
+          c.mesh.visible = true;
+          c.mesh.material.opacity = 1;
+          const angle = Math.random() * Math.PI * 2;
+          const radius = 0.2 + Math.random() * 0.6;
+          c.mesh.position.set(
+            Math.cos(angle) * radius,
+            robotRoot.position.y + 0.5 + (Math.random() - 0.3) * 0.5,
+            Math.sin(angle) * radius
+          );
+          c.mesh.rotation.set(
+            Math.random() * Math.PI,
+            Math.random() * Math.PI,
+            Math.random() * Math.PI
+          );
+          const speed = 2.2 + Math.random() * 3.4;
+          c.vel.set(
+            Math.cos(angle) * speed,
+            3.2 + Math.random() * 3.8,
+            Math.sin(angle) * speed
+          );
+          c.rotVel.set(
+            (Math.random() - 0.5) * 12,
+            (Math.random() - 0.5) * 12,
+            (Math.random() - 0.5) * 12
+          );
+          c.life = 0;
+          c.maxLife = 2.6 + Math.random() * 1.2;
+          if (!activeConfetti.includes(c)) activeConfetti.push(c);
+        }
+
+        // 2. Estrellas luminosas y destellos alrededor del cuerpo
+        for (let i = 0; i < starPool.length; i++) {
+          const s = starPool[i];
+          s.mesh.visible = true;
+          s.mesh.material.opacity = 1;
+          const theta = Math.random() * Math.PI * 2;
+          const phi = (Math.random() - 0.5) * Math.PI;
+          const r = 0.4 + Math.random() * 0.8;
+          s.mesh.position.set(
+            Math.cos(theta) * Math.cos(phi) * r,
+            robotRoot.position.y + 0.2 + Math.sin(phi) * r,
+            Math.sin(theta) * Math.cos(phi) * r
+          );
+          s.mesh.scale.setScalar(0.01);
+          s.vel.set(
+            Math.cos(theta) * (1.2 + Math.random() * 1.8),
+            0.6 + Math.random() * 2.0,
+            Math.sin(theta) * (1.2 + Math.random() * 1.8)
+          );
+          s.life = 0;
+          s.maxLife = 1.1 + Math.random() * 0.8;
+          if (!activeStars.includes(s)) activeStars.push(s);
+        }
+
+        // 3. Ondas de energía en la plataforma y pulso LED
+        energyWaves.forEach((ring, idx) => {
+          gsap.killTweensOf(ring.scale);
+          gsap.killTweensOf(ring.position);
+          gsap.killTweensOf(ring.material);
+          ring.visible = true;
+          ring.scale.set(0.6, 0.6, 0.6);
+          ring.position.y = -1.98;
+          ring.material.opacity = 0.9;
+
+          gsap.to(ring.scale, {
+            x: 2.3 + idx * 0.35,
+            y: 2.3 + idx * 0.35,
+            z: 1,
+            duration: 1.25,
+            delay: idx * 0.22,
+            ease: 'power2.out'
+          });
+          gsap.to(ring.position, {
+            y: -0.6 + idx * 0.35,
+            duration: 1.25,
+            delay: idx * 0.22,
+            ease: 'power1.out'
+          });
+          gsap.to(ring.material, {
+            opacity: 0,
+            duration: 1.25,
+            delay: idx * 0.22,
+            ease: 'power2.in',
+            onComplete: () => { ring.visible = false; }
+          });
+        });
+
+        // 4. Pulso de iluminación LED en visor y luces de escena
+        gsap.killTweensOf(ledGlowMat);
+        gsap.fromTo(ledGlowMat,
+          { opacity: 0.95 },
+          { opacity: 0.38, duration: 1.6, ease: 'elastic.out(1, 0.4)' }
+        );
+        gsap.fromTo(cyanRimLight,
+          { intensity: 6.2 },
+          { intensity: 3.2, duration: 1.4, ease: 'power2.out' }
+        );
+        gsap.fromTo(orangeRimLight,
+          { intensity: 5.0 },
+          { intensity: 2.4, duration: 1.4, ease: 'power2.out' }
+        );
+      }
+
+      function updateCelebrationVFX(dt, elapsed) {
+        const gravity = 7.8;
+        const drag = 0.985;
+
+        for (let i = activeConfetti.length - 1; i >= 0; i--) {
+          const c = activeConfetti[i];
+          c.life += dt;
+          if (c.life >= c.maxLife || c.mesh.position.y < -2.12) {
+            c.mesh.visible = false;
+            activeConfetti.splice(i, 1);
+            continue;
+          }
+
+          c.vel.y -= gravity * dt;
+          c.vel.multiplyScalar(drag);
+
+          // Oscilación de caída tipo papel (flutter)
+          const flutterX = Math.sin(elapsed * c.swaySpeed + c.swayPhase) * 0.85;
+          const flutterZ = Math.cos(elapsed * c.swaySpeed + c.swayPhase) * 0.85;
+
+          c.mesh.position.x += (c.vel.x + flutterX) * dt;
+          c.mesh.position.y += c.vel.y * dt;
+          c.mesh.position.z += (c.vel.z + flutterZ) * dt;
+
+          c.mesh.rotation.x += c.rotVel.x * dt;
+          c.mesh.rotation.y += c.rotVel.y * dt;
+          c.mesh.rotation.z += c.rotVel.z * dt;
+
+          const fadeRatio = c.life / c.maxLife;
+          c.mesh.material.opacity = fadeRatio > 0.72 ? (1 - (fadeRatio - 0.72) / 0.28) : 1;
+        }
+
+        for (let i = activeStars.length - 1; i >= 0; i--) {
+          const s = activeStars[i];
+          s.life += dt;
+          if (s.life >= s.maxLife) {
+            s.mesh.visible = false;
+            activeStars.splice(i, 1);
+            continue;
+          }
+          const progress = s.life / s.maxLife;
+          s.mesh.position.addScaledVector(s.vel, dt);
+          s.vel.multiplyScalar(0.95);
+          s.mesh.rotation.y += 6 * dt;
+          s.mesh.rotation.x += 4 * dt;
+
+          const scaleCurve = Math.sin(progress * Math.PI) * s.baseScale;
+          s.mesh.scale.setScalar(Math.max(0.001, scaleCurve));
+          s.mesh.material.opacity = 1 - progress;
+        }
+      }
+
+      // ----------------------------------------------------------------------
+      // 7. SISTEMA DE ESTADOS, POSE BASE Y BIOMECÁNICA DE ARTICULACIONES
+      // ----------------------------------------------------------------------
+      const ROBOT_STATE = {
+        IDLE: 'IDLE',
+        WAVING: 'WAVING',
+        DANCING: 'DANCING',
+        CELEBRATING: 'CELEBRATING',
+        REACTING: 'REACTING'
+      };
+
+      let currentState = ROBOT_STATE.IDLE;
+      let activeTimeline = null;
+      // Peso de la animación procedural automática (1 = 100% activo en reposo, 0 = controlado por GSAP)
+      const animCtrl = { idleWeight: 1.0 };
+
+      // Pose original exacta del modelo para restaurar sin errores ni saltos
+      const REST_POSE = {
+        rootPos: { x: 0, y: 0.28, z: 0 },
+        rootRot: { x: 0, y: 0.16, z: 0 },
+        pelvisPos: { x: 0, y: -0.32, z: 0 },
+        pelvisRot: { x: 0, y: 0, z: 0 },
+        torsoPos: { x: 0, y: 0.42, z: 0 },
+        torsoRot: { x: 0, y: 0, z: 0 },
+        neckRot: { x: 0, y: 0, z: 0 },
+        headPos: { x: 0, y: 0.72, z: 0 },
+        headRot: { x: 0, y: 0.12, z: -0.05 },
+        rShoulderRot: { x: 0.22, y: 0, z: -0.42 },
+        rElbowRot: { x: -0.68, y: 0, z: 0.18 },
+        rWristRot: { x: 0, y: 0, z: 0 },
+        lShoulderRot: { x: -0.48, y: 0, z: 0.58 },
+        lElbowRot: { x: -1.15, y: -0.35, z: 0 },
+        lWristRot: { x: 0.35, y: 0, z: 0 },
+        rHipRot: { x: -0.18, y: 0, z: -0.08 },
+        rKneeRot: { x: 0.35, y: 0, z: 0 },
+        rAnkleRot: { x: 0.18, y: 0, z: 0 },
+        lHipRot: { x: -0.58, y: 0, z: 0.12 },
+        lKneeRot: { x: 0.92, y: 0, z: 0 },
+        lAnkleRot: { x: 0.25, y: 0, z: 0 },
+        rThumbRot: { x: 0, y: 0, z: -0.6 },
+        lThumbRot: { x: 0, y: 0, z: 0.6 }
+      };
+
+      function getAllAnimatedTargets() {
+        const targets = [
+          robotRoot.position, robotRoot.rotation,
+          pelvisGroup.position, pelvisGroup.rotation,
+          torsoGroup.position, torsoGroup.rotation,
+          neckGroup.rotation,
+          headGroup.position, headGroup.rotation,
+          rightShoulder.position, rightShoulder.rotation,
+          rightElbow.rotation, rightWrist.rotation,
+          leftShoulder.position, leftShoulder.rotation,
+          leftElbow.rotation, leftWrist.rotation,
+          rightHip.rotation, rightKnee.rotation, rightAnkle.rotation,
+          leftHip.rotation, leftKnee.rotation, leftAnkle.rotation,
+          rightThumb.rotation, leftThumb.rotation,
+          leftEye.scale, rightEye.scale, leftEye.rotation, rightEye.rotation,
+          animCtrl
+        ];
+        rightFingers.forEach(f => targets.push(f.rotation));
+        leftFingers.forEach(f => targets.push(f.rotation));
+        return targets;
+      }
+
+      function stopCurrentAnimation() {
+        if (activeTimeline) {
+          activeTimeline.kill();
+          activeTimeline = null;
+        }
+        getAllAnimatedTargets().forEach(t => gsap.killTweensOf(t));
+      }
+
+      // Crea un tween de retorno suave de todas las articulaciones a su estado original
+      function appendReturnToRestPose(tl, startTime, duration = 0.65, ease = 'power2.inOut') {
+        tl.to(robotRoot.position, { ...REST_POSE.rootPos, duration, ease }, startTime)
+          .to(robotRoot.rotation, { ...REST_POSE.rootRot, duration, ease }, startTime)
+          .to(pelvisGroup.position, { ...REST_POSE.pelvisPos, duration, ease }, startTime)
+          .to(pelvisGroup.rotation, { ...REST_POSE.pelvisRot, duration, ease }, startTime)
+          .to(torsoGroup.position, { ...REST_POSE.torsoPos, duration, ease }, startTime)
+          .to(torsoGroup.rotation, { ...REST_POSE.torsoRot, duration, ease }, startTime)
+          .to(neckGroup.rotation, { ...REST_POSE.neckRot, duration, ease }, startTime)
+          .to(headGroup.position, { ...REST_POSE.headPos, duration, ease }, startTime)
+          .to(headGroup.rotation, { ...REST_POSE.headRot, duration, ease }, startTime)
+          .to(rightShoulder.position, { x: -0.68, y: 0.34, z: 0, duration, ease }, startTime)
+          .to(leftShoulder.position, { x: 0.68, y: 0.34, z: 0, duration, ease }, startTime)
+          .to(rightShoulder.rotation, { ...REST_POSE.rShoulderRot, duration, ease }, startTime)
+          .to(rightElbow.rotation, { ...REST_POSE.rElbowRot, duration, ease }, startTime)
+          .to(rightWrist.rotation, { ...REST_POSE.rWristRot, duration, ease }, startTime)
+          .to(leftShoulder.rotation, { ...REST_POSE.lShoulderRot, duration, ease }, startTime)
+          .to(leftElbow.rotation, { ...REST_POSE.lElbowRot, duration, ease }, startTime)
+          .to(leftWrist.rotation, { ...REST_POSE.lWristRot, duration, ease }, startTime)
+          .to(rightHip.rotation, { ...REST_POSE.rHipRot, duration, ease }, startTime)
+          .to(rightKnee.rotation, { ...REST_POSE.rKneeRot, duration, ease }, startTime)
+          .to(rightAnkle.rotation, { ...REST_POSE.rAnkleRot, duration, ease }, startTime)
+          .to(leftHip.rotation, { ...REST_POSE.lHipRot, duration, ease }, startTime)
+          .to(leftKnee.rotation, { ...REST_POSE.lKneeRot, duration, ease }, startTime)
+          .to(leftAnkle.rotation, { ...REST_POSE.lAnkleRot, duration, ease }, startTime)
+          .to(rightThumb.rotation, { ...REST_POSE.rThumbRot, duration, ease }, startTime)
+          .to(leftThumb.rotation, { ...REST_POSE.lThumbRot, duration, ease }, startTime)
+          .to([leftEye.scale, rightEye.scale], { x: 1, y: 1, z: 1, duration: duration * 0.7, ease }, startTime)
+          .to([leftEye.rotation, rightEye.rotation], { z: 0, duration: duration * 0.7, ease }, startTime)
+          .to(animCtrl, { idleWeight: 1.0, duration, ease: 'sine.inOut' }, startTime);
+
+        rightFingers.forEach(f => {
+          tl.to(f.rotation, { x: 0, y: 0, z: 0, duration: duration * 0.8, ease }, startTime);
+        });
+        leftFingers.forEach(f => {
+          tl.to(f.rotation, { x: 0, y: 0, z: 0, duration: duration * 0.8, ease }, startTime);
+        });
+      }
+
+      // ----------------------------------------------------------------------
+      // 8. COREOGRAFÍAS Y ANIMACIONES DE PERSONAJE (SALUDAR, BAILAR, CELEBRAR)
+      // ----------------------------------------------------------------------
+      function playWaveAnimation() {
+        stopCurrentAnimation();
+        currentState = ROBOT_STATE.WAVING;
+        showRobotSpeech('¡Hola! Bienvenido a RAFAEL-CODEX 👋');
+
+        const tl = gsap.timeline({
+          onComplete: () => {
+            currentState = ROBOT_STATE.IDLE;
+            activeTimeline = null;
+          }
+        });
+        activeTimeline = tl;
+
+        // Desactivar suavemente el control procedural para dar paso a la actuación
+        tl.to(animCtrl, { idleWeight: 0, duration: 0.25, ease: 'power2.out' }, 0);
+
+        // PASO 1: Mirar directamente al espectador + inclinación de reconocimiento con anticipación
+        tl.to(robotRoot.rotation, { y: 0.0, z: -0.02, duration: 0.42, ease: 'power2.out' }, 0)
+          .to(robotRoot.position, { y: 0.23, duration: 0.28, ease: 'sine.inOut' }, 0)
+          .to(pelvisGroup.rotation, { y: -0.06, z: 0.04, duration: 0.4, ease: 'power2.out' }, 0)
+          .to(torsoGroup.rotation, { x: 0.14, y: 0.06, z: -0.05, duration: 0.48, ease: 'power2.out' }, 0.05)
+          .to(neckGroup.rotation, { x: -0.06, z: -0.05, duration: 0.4, ease: 'power2.out' }, 0.05)
+          .to(headGroup.rotation, { x: -0.08, y: 0.0, z: -0.22, duration: 0.45, ease: 'back.out(1.8)' }, 0.04)
+          // Expresión ocular de alegría al reconocer al usuario
+          .to([leftEye.scale, rightEye.scale], { x: 1.18, y: 1.24, duration: 0.28, ease: 'back.out(2)' }, 0.06)
+          .to(leftEye.rotation, { z: 0.08, duration: 0.28 }, 0.06)
+          .to(rightEye.rotation, { z: -0.08, duration: 0.28 }, 0.06)
+          // Ligera flexión de rodillas en anticipación
+          .to(rightKnee.rotation, { x: 0.48, duration: 0.32, ease: 'sine.inOut' }, 0)
+          .to(leftKnee.rotation, { x: 0.78, duration: 0.32, ease: 'sine.inOut' }, 0);
+
+        // PASO 2: Levantar progresivamente el brazo derecho con coordinación hombro-codo-muñeca-dedos
+        tl.to(robotRoot.position, { y: 0.34, duration: 0.45, ease: 'back.out(1.4)' }, 0.28)
+          .to(rightShoulder.rotation, { x: -0.45, y: -0.28, z: -2.08, duration: 0.52, ease: 'back.out(1.4)' }, 0.22)
+          .to(rightElbow.rotation, { x: -0.58, y: 0.22, z: -0.28, duration: 0.48, ease: 'power2.out' }, 0.26)
+          .to(rightWrist.rotation, { x: -0.12, y: 0.35, z: -0.28, duration: 0.42, ease: 'power2.out' }, 0.32)
+          .to(rightThumb.rotation, { z: -0.85, x: 0.15, duration: 0.35 }, 0.32)
+          // Brazo izquierdo acompaña con equilibrio natural en la cadera
+          .to(leftShoulder.rotation, { x: -0.25, z: 0.46, duration: 0.5, ease: 'sine.out' }, 0.25)
+          .to(leftElbow.rotation, { x: -0.88, y: -0.2, duration: 0.5, ease: 'sine.out' }, 0.25);
+
+        // Abrir los dedos de la mano derecha progresivamente
+        rightFingers.forEach((f, idx) => {
+          tl.to(f.rotation, {
+            x: -0.14,
+            z: (idx - 1.5) * 0.08,
+            duration: 0.35,
+            ease: 'back.out(1.5)'
+          }, 0.32 + idx * 0.03);
+        });
+
+        // PASO 3: Saludo fluido de muñeca, codo, cabeza y dedos con desfase (overlapping action)
+        const waveStart = 0.76;
+        const waveDuration = 0.24;
+        const waveCycles = 5;
+
+        for (let w = 0; w < waveCycles; w++) {
+          const dir = w % 2 === 0 ? 1 : -1;
+          const t = waveStart + w * waveDuration;
+
+          // Muñeca lidera con fluidez
+          tl.to(rightWrist.rotation, {
+            z: dir * 0.42,
+            x: -0.1 + dir * 0.06,
+            duration: waveDuration,
+            ease: 'sine.inOut'
+          }, t);
+
+          // Codo y hombro amortiguan el movimiento
+          tl.to(rightElbow.rotation, {
+            z: -0.22 + dir * 0.16,
+            x: -0.55 + dir * 0.05,
+            duration: waveDuration,
+            ease: 'sine.inOut'
+          }, t + 0.03);
+
+          tl.to(rightShoulder.rotation, {
+            z: -2.08 + dir * 0.07,
+            duration: waveDuration,
+            ease: 'sine.inOut'
+          }, t + 0.04);
+
+          // Dedos siguen con inercia escalonada (follow-through)
+          rightFingers.forEach((f, fIdx) => {
+            tl.to(f.rotation, {
+              x: -0.05 + dir * (0.18 + fIdx * 0.03),
+              z: (fIdx - 1.5) * 0.07 + dir * 0.08,
+              duration: waveDuration,
+              ease: 'sine.inOut'
+            }, t + 0.04 + fIdx * 0.018);
+          });
+
+          // Cabeza y torso acompañan simpáticamente cada par de ondas
+          if (w % 2 === 0) {
+            tl.to(headGroup.rotation, {
+              z: dir * 0.18,
+              y: dir * 0.08,
+              x: -0.05,
+              duration: waveDuration * 1.9,
+              ease: 'sine.inOut'
+            }, t);
+            tl.to(torsoGroup.rotation, {
+              z: -dir * 0.04,
+              x: 0.15,
+              duration: waveDuration * 1.9,
+              ease: 'sine.inOut'
+            }, t);
+          }
+        }
+
+        // PASO 4: Pequeño gesto amistoso final con la mano y reverencia simpática (saludo corto)
+        const gestureTime = waveStart + waveCycles * waveDuration + 0.04;
+        tl.to(rightShoulder.rotation, { x: -0.62, z: -1.75, duration: 0.28, ease: 'power2.out' }, gestureTime)
+          .to(rightElbow.rotation, { x: -1.05, z: -0.1, duration: 0.28, ease: 'power2.out' }, gestureTime)
+          .to(rightWrist.rotation, { x: -0.35, z: 0.12, duration: 0.25, ease: 'back.out(2)' }, gestureTime)
+          // Gesto de 2 dedos amistoso + guiño/sonrisa de ojos
+          .to([rightFingers[2].rotation, rightFingers[3].rotation], { x: 0.75, duration: 0.22, ease: 'power2.out' }, gestureTime)
+          .to([rightFingers[0].rotation, rightFingers[1].rotation], { x: -0.22, duration: 0.22, ease: 'back.out(2)' }, gestureTime)
+          .to(headGroup.rotation, { x: 0.14, z: -0.16, y: 0.05, duration: 0.26, ease: 'power2.out' }, gestureTime)
+          .to(torsoGroup.rotation, { x: 0.20, duration: 0.26, ease: 'power2.out' }, gestureTime)
+          .to([leftEye.scale, rightEye.scale], { x: 1.25, y: 0.32, duration: 0.16, yoyo: true, repeat: 1, ease: 'sine.inOut' }, gestureTime + 0.04)
+          // Pequeño impulso hacia adelante de despedida con la mano
+          .to(rightElbow.rotation, { x: -0.72, duration: 0.24, ease: 'back.out(1.8)' }, gestureTime + 0.28)
+          .to(rightWrist.rotation, { x: 0.15, z: 0, duration: 0.24, ease: 'power2.out' }, gestureTime + 0.28)
+          .to(headGroup.rotation, { x: -0.04, z: -0.08, duration: 0.26, ease: 'sine.out' }, gestureTime + 0.28);
+
+        // PASO 5: Bajar el brazo suavemente con inercia y regresar a la posición original
+        appendReturnToRestPose(tl, gestureTime + 0.56, 0.72, 'power2.inOut');
+      }
+
+      function playDanceAnimation() {
+        stopCurrentAnimation();
+        currentState = ROBOT_STATE.DANCING;
+        showRobotSpeech('💃 ¡Modo Baile Cibernético Activado! 🎶', 3200);
+
+        const tl = gsap.timeline({
+          onComplete: () => {
+            currentState = ROBOT_STATE.IDLE;
+            activeTimeline = null;
+          }
+        });
+        activeTimeline = tl;
+
+        tl.to(animCtrl, { idleWeight: 0, duration: 0.25, ease: 'power2.out' }, 0);
+
+        const beat = 0.42; // ~142 BPM para un ritmo alegre, dinámico y súper coordinado
+        let t = 0;
+
+        // ====================================================================
+        // FASE 1: INTRO GROOVE & BOUNCE LATERAL (0.0s - 1.85s)
+        // Balanceo natural de cuerpo, flexión alternada de rodillas y hombros
+        // ====================================================================
+        // Anticipación inicial
+        tl.to(robotRoot.position, { y: 0.14, x: 0, duration: 0.22, ease: 'power2.in' }, t)
+          .to(robotRoot.rotation, { y: 0, duration: 0.22 }, t)
+          .to(pelvisGroup.rotation, { x: 0.08, duration: 0.22 }, t)
+          .to(torsoGroup.rotation, { x: 0.12, duration: 0.22 }, t)
+          .to([rightKnee.rotation, leftKnee.rotation], { x: 0.85, duration: 0.22 }, t)
+          .to([rightAnkle.rotation, leftAnkle.rotation], { x: 0.35, duration: 0.22 }, t);
+        t += 0.22;
+
+        // 4 tiempos de groove con rebote de rodillas, caderas y coordinación de hombros/muñecas
+        for (let i = 0; i < 4; i++) {
+          const side = i % 2 === 0 ? 1 : -1;
+          const stepStart = t + i * beat;
+
+          // Subida en el medio tiempo y caída suave en el pulso
+          tl.to(robotRoot.position, {
+            x: side * 0.22,
+            y: 0.36,
+            duration: beat * 0.5,
+            ease: 'sine.out'
+          }, stepStart)
+          .to(robotRoot.position, {
+            y: 0.16,
+            duration: beat * 0.5,
+            ease: 'sine.in'
+          }, stepStart + beat * 0.5)
+
+          // Movimiento de caderas (pelvis) opuesto a la inclinación del torso para equilibrio natural
+          .to(pelvisGroup.rotation, {
+            z: side * 0.16,
+            y: side * 0.22,
+            x: -0.04,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart)
+          .to(torsoGroup.rotation, {
+            z: -side * 0.12,
+            y: -side * 0.15,
+            x: 0.08,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart)
+
+          // Balanceo de cabeza siguiendo el ritmo con desfase ligero
+          .to(headGroup.rotation, {
+            z: side * 0.22,
+            y: side * 0.18,
+            x: 0.08,
+            duration: beat * 0.5,
+            ease: 'sine.out'
+          }, stepStart + 0.04)
+          .to(headGroup.rotation, {
+            x: -0.10,
+            duration: beat * 0.5,
+            ease: 'sine.in'
+          }, stepStart + beat * 0.5 + 0.04)
+
+          // Flexión alternada de rodillas y pasos con los pies
+          .to(rightHip.rotation, {
+            x: side > 0 ? -0.58 : -0.18,
+            z: -0.08 + side * 0.10,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart)
+          .to(rightKnee.rotation, {
+            x: side > 0 ? 1.05 : 0.32,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart)
+          .to(rightAnkle.rotation, {
+            x: side > 0 ? 0.38 : 0.12,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart)
+          .to(leftHip.rotation, {
+            x: side < 0 ? -0.58 : -0.18,
+            z: 0.08 + side * 0.10,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart)
+          .to(leftKnee.rotation, {
+            x: side < 0 ? 1.05 : 0.32,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart)
+          .to(leftAnkle.rotation, {
+            x: side < 0 ? 0.38 : 0.12,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart)
+
+          // Hombros, codos y muñecas bombeando el ritmo
+          .to(rightShoulder.rotation, {
+            x: side > 0 ? -0.65 : 0.15,
+            y: side * 0.25,
+            z: side > 0 ? -1.15 : -0.45,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart)
+          .to(rightElbow.rotation, {
+            x: side > 0 ? -1.35 : -0.75,
+            z: side * 0.22,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart)
+          .to(rightWrist.rotation, {
+            x: side > 0 ? 0.45 : -0.25,
+            z: side * 0.3,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart + 0.04)
+          .to(leftShoulder.rotation, {
+            x: side < 0 ? -0.65 : 0.15,
+            y: side * 0.25,
+            z: side < 0 ? 1.15 : 0.45,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart)
+          .to(leftElbow.rotation, {
+            x: side < 0 ? -1.35 : -0.75,
+            z: side * 0.22,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart)
+          .to(leftWrist.rotation, {
+            x: side < 0 ? 0.45 : -0.25,
+            z: side * 0.3,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart + 0.04);
+        }
+        t += 4 * beat;
+
+        // ====================================================================
+        // FASE 2: PASOS LATERALES Y ONDA DE BRAZOS ARRIBA (1.9s - 4.4s)
+        // Desplazamiento lateral con ambos pies, caderas y brazos levantados
+        // ====================================================================
+        for (let s = 0; s < 6; s++) {
+          const dir = s % 2 === 0 ? -1 : 1;
+          const stepStart = t + s * beat;
+          const armsHigh = s >= 2; // A partir del paso 3 levanta ambos brazos mientras baila
+
+          tl.to(robotRoot.position, {
+            x: dir * 0.36,
+            y: 0.40,
+            duration: beat * 0.48,
+            ease: 'power2.out'
+          }, stepStart)
+          .to(robotRoot.position, {
+            y: 0.18,
+            duration: beat * 0.52,
+            ease: 'bounce.out'
+          }, stepStart + beat * 0.48)
+
+          // Giro corporal pequeño y natural acompañado de cadera
+          .to(robotRoot.rotation, {
+            y: dir * 0.32,
+            z: -dir * 0.06,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart)
+          .to(pelvisGroup.rotation, {
+            y: dir * 0.26,
+            z: dir * 0.18,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart)
+          .to(torsoGroup.rotation, {
+            y: -dir * 0.18,
+            z: -dir * 0.14,
+            x: armsHigh ? -0.10 : 0.12,
+            duration: beat,
+            ease: 'sine.inOut'
+          }, stepStart)
+          .to(headGroup.rotation, {
+            y: -dir * 0.16,
+            z: dir * 0.24,
+            x: armsHigh ? -0.12 : 0.06,
+            duration: beat,
+            ease: 'back.out(1.4)'
+          }, stepStart + 0.03)
+
+          // Trabajo de pies: elevación de rodilla del pie que da el paso y apoyo del otro
+          .to(rightHip.rotation, {
+            x: dir < 0 ? -0.72 : -0.12,
+            z: dir < 0 ? -0.26 : 0.05,
+            duration: beat * 0.5,
+            ease: 'power2.out'
+          }, stepStart)
+          .to(rightKnee.rotation, {
+            x: dir < 0 ? 1.22 : 0.42,
+            duration: beat * 0.5,
+            ease: 'power2.out'
+          }, stepStart)
+          .to(leftHip.rotation, {
+            x: dir > 0 ? -0.72 : -0.12,
+            z: dir > 0 ? 0.26 : -0.05,
+            duration: beat * 0.5,
+            ease: 'power2.out'
+          }, stepStart)
+          .to(leftKnee.rotation, {
+            x: dir > 0 ? 1.22 : 0.42,
+            duration: beat * 0.5,
+            ease: 'power2.out'
+          }, stepStart)
+          // Plantar ambos pies al caer en el beat
+          .to([rightHip.rotation, leftHip.rotation], {
+            x: -0.35,
+            z: 0,
+            duration: beat * 0.5,
+            ease: 'sine.in'
+          }, stepStart + beat * 0.5)
+          .to([rightKnee.rotation, leftKnee.rotation], {
+            x: 0.68,
+            duration: beat * 0.5,
+            ease: 'sine.in'
+          }, stepStart + beat * 0.5);
+
+          if (armsHigh) {
+            // Ambos brazos arriba bombeando el techo ("Raise the roof") con muñecas y dedos
+            tl.to(rightShoulder.rotation, {
+              x: -0.35,
+              y: dir * 0.2,
+              z: -2.25 + dir * 0.25,
+              duration: beat,
+              ease: 'back.out(1.4)'
+            }, stepStart)
+            .to(leftShoulder.rotation, {
+              x: -0.35,
+              y: dir * 0.2,
+              z: 2.25 + dir * 0.25,
+              duration: beat,
+              ease: 'back.out(1.4)'
+            }, stepStart)
+            .to([rightElbow.rotation, leftElbow.rotation], {
+              x: -0.55,
+              z: dir * 0.25,
+              duration: beat * 0.5,
+              yoyo: true,
+              repeat: 1,
+              ease: 'sine.inOut'
+            }, stepStart)
+            .to([rightWrist.rotation, leftWrist.rotation], {
+              x: -0.45,
+              z: dir * 0.38,
+              duration: beat,
+              ease: 'sine.inOut'
+            }, stepStart + 0.04);
+
+            rightFingers.concat(leftFingers).forEach((f, fIdx) => {
+              tl.to(f.rotation, {
+                x: (s % 2 === 0 ? -0.2 : 0.35),
+                z: ((fIdx % 4) - 1.5) * 0.09,
+                duration: beat,
+                ease: 'sine.inOut'
+              }, stepStart + (fIdx % 4) * 0.02);
+            });
+          } else {
+            // Brazos cruzando con estilo disco/funk
+            tl.to(rightShoulder.rotation, {
+              x: -0.75,
+              y: dir < 0 ? -0.4 : 0.45,
+              z: dir < 0 ? -1.65 : -0.35,
+              duration: beat,
+              ease: 'power2.inOut'
+            }, stepStart)
+            .to(leftShoulder.rotation, {
+              x: -0.75,
+              y: dir > 0 ? 0.4 : -0.45,
+              z: dir > 0 ? 1.65 : 0.35,
+              duration: beat,
+              ease: 'power2.inOut'
+            }, stepStart)
+            .to([rightElbow.rotation, leftElbow.rotation], {
+              x: -1.1,
+              z: dir * 0.3,
+              duration: beat,
+              ease: 'sine.inOut'
+            }, stepStart)
+            .to([rightWrist.rotation, leftWrist.rotation], {
+              z: -dir * 0.45,
+              x: 0.25,
+              duration: beat,
+              ease: 'sine.inOut'
+            }, stepStart);
+          }
+        }
+        t += 6 * beat;
+
+        // ====================================================================
+        // FASE 3: SALTOS RÍTMICOS CON CAÍDA SUAVE Y GIROS DINÁMICOS (4.4s - 6.8s)
+        // Anticipación -> Salto con brazos abiertos -> Aterrizaje amortiguado
+        // ====================================================================
+        for (let j = 0; j < 2; j++) {
+          const turnDir = j === 0 ? 1 : -1;
+          const jumpStart = t + j * (beat * 2.6);
+
+          // 1. Anticipación (Squat antes del salto)
+          tl.to(robotRoot.position, { x: 0, y: 0.06, duration: 0.24, ease: 'power2.in' }, jumpStart)
+            .to(torsoGroup.rotation, { x: 0.26, z: 0, duration: 0.24, ease: 'power2.in' }, jumpStart)
+            .to(headGroup.rotation, { x: 0.18, z: 0, duration: 0.24 }, jumpStart)
+            .to([rightHip.rotation, leftHip.rotation], { x: -0.78, z: 0, duration: 0.24 }, jumpStart)
+            .to([rightKnee.rotation, leftKnee.rotation], { x: 1.38, duration: 0.24 }, jumpStart)
+            .to([rightAnkle.rotation, leftAnkle.rotation], { x: 0.52, duration: 0.24 }, jumpStart)
+            .to(rightShoulder.rotation, { x: 0.45, z: -0.35, duration: 0.24 }, jumpStart)
+            .to(leftShoulder.rotation, { x: 0.45, z: 0.35, duration: 0.24 }, jumpStart)
+            .to([rightElbow.rotation, leftElbow.rotation], { x: -1.25, duration: 0.24 }, jumpStart)
+
+          // 2. Despegue y vuelo con giro corporal natural y ambos brazos arriba
+            .to(robotRoot.position, {
+              x: turnDir * 0.18,
+              y: 0.78,
+              duration: 0.38,
+              ease: 'power2.out'
+            }, jumpStart + 0.24)
+            .to(robotRoot.rotation, {
+              y: turnDir * 0.58,
+              z: turnDir * 0.10,
+              duration: 0.52,
+              ease: 'power2.inOut'
+            }, jumpStart + 0.24)
+            .to(torsoGroup.rotation, {
+              x: -0.18,
+              y: turnDir * 0.16,
+              z: -turnDir * 0.12,
+              duration: 0.38,
+              ease: 'power2.out'
+            }, jumpStart + 0.24)
+            .to(headGroup.rotation, {
+              x: -0.18,
+              y: -turnDir * 0.22,
+              z: turnDir * 0.22,
+              duration: 0.38,
+              ease: 'back.out(1.6)'
+            }, jumpStart + 0.24)
+            .to([leftEye.scale, rightEye.scale], {
+              x: 1.28,
+              y: 1.28,
+              duration: 0.25,
+              yoyo: true,
+              repeat: 1
+            }, jumpStart + 0.24)
+            // Piernas se extienden en el aire con puntas hacia abajo
+            .to([rightHip.rotation, leftHip.rotation], { x: -0.08, z: (idx) => idx === 0 ? -0.18 : 0.18, duration: 0.34, ease: 'power2.out' }, jumpStart + 0.24)
+            .to([rightKnee.rotation, leftKnee.rotation], { x: 0.18, duration: 0.34, ease: 'power2.out' }, jumpStart + 0.24)
+            .to([rightAnkle.rotation, leftAnkle.rotation], { x: -0.25, duration: 0.34, ease: 'power2.out' }, jumpStart + 0.24)
+            // Brazos abiertos arriba con entusiasmo
+            .to(rightShoulder.rotation, { x: -0.35, z: -2.4, duration: 0.36, ease: 'back.out(1.6)' }, jumpStart + 0.24)
+            .to(leftShoulder.rotation, { x: -0.35, z: 2.4, duration: 0.36, ease: 'back.out(1.6)' }, jumpStart + 0.24)
+            .to([rightElbow.rotation, leftElbow.rotation], { x: -0.28, z: 0, duration: 0.36 }, jumpStart + 0.24)
+            .to([rightWrist.rotation, leftWrist.rotation], { x: -0.25, z: turnDir * 0.35, duration: 0.36 }, jumpStart + 0.28)
+
+          // 3. Caída suave con amortiguación biomecánica en rodillas, pelvis y muñecas
+            .to(robotRoot.position, {
+              y: 0.12,
+              duration: 0.34,
+              ease: 'power2.in'
+            }, jumpStart + 0.62)
+            .to([rightHip.rotation, leftHip.rotation], { x: -0.68, duration: 0.26, ease: 'power2.out' }, jumpStart + 0.72)
+            .to([rightKnee.rotation, leftKnee.rotation], { x: 1.22, duration: 0.26, ease: 'power2.out' }, jumpStart + 0.72)
+            .to([rightAnkle.rotation, leftAnkle.rotation], { x: 0.45, duration: 0.26, ease: 'power2.out' }, jumpStart + 0.72)
+            .to(torsoGroup.rotation, { x: 0.18, duration: 0.26, ease: 'power2.out' }, jumpStart + 0.72)
+            .to(rightShoulder.rotation, { z: -1.1, x: -0.2, duration: 0.32, ease: 'sine.inOut' }, jumpStart + 0.68)
+            .to(leftShoulder.rotation, { z: 1.1, x: -0.2, duration: 0.32, ease: 'sine.inOut' }, jumpStart + 0.68)
+            // Rebote elástico de recuperación tras aterrizar
+            .to(robotRoot.position, { y: 0.28, duration: 0.22, ease: 'sine.out' }, jumpStart + 0.96)
+            .to([rightKnee.rotation, leftKnee.rotation], { x: 0.55, duration: 0.22, ease: 'sine.out' }, jumpStart + 0.96);
+        }
+        t += 2 * (beat * 2.6);
+
+        // ====================================================================
+        // FASE 4: SHUFFLE RÁPIDO Y POSE FINAL DIVERTIDA (6.6s - 8.8s)
+        // Un brazo levantado, el otro en la cintura y cabeza inclinada
+        // ====================================================================
+        // Pequeño giro de preparación hacia el frente
+        tl.to(robotRoot.rotation, { y: 0.08, z: -0.05, duration: 0.38, ease: 'power2.inOut' }, t)
+          .to(robotRoot.position, { x: -0.14, y: 0.34, duration: 0.38, ease: 'sine.inOut' }, t)
+          .to(pelvisGroup.rotation, { y: -0.22, z: 0.16, duration: 0.38 }, t)
+          .to(torsoGroup.rotation, { y: 0.18, z: -0.14, x: -0.06, duration: 0.38 }, t)
+          .to(rightShoulder.rotation, { x: -0.85, y: 0.45, z: -1.45, duration: 0.38 }, t)
+          .to(leftShoulder.rotation, { x: -0.85, y: -0.45, z: 1.45, duration: 0.38 }, t);
+        t += 0.38;
+
+        // POSE FINAL ICÓNICA: Brazo derecho arriba señalando al cielo, brazo izquierdo en jarra,
+        // cadera con actitud y cabeza inclinada con simpatía
+        tl.to(robotRoot.position, { x: 0.06, y: 0.24, duration: 0.42, ease: 'back.out(2)' }, t)
+          .to(robotRoot.rotation, { y: -0.12, z: 0.04, duration: 0.42, ease: 'back.out(1.6)' }, t)
+          .to(pelvisGroup.rotation, { z: -0.18, y: 0.20, x: -0.05, duration: 0.42, ease: 'back.out(1.8)' }, t)
+          .to(torsoGroup.rotation, { z: 0.14, y: -0.12, x: -0.14, duration: 0.42, ease: 'back.out(1.8)' }, t)
+          .to(headGroup.rotation, { z: -0.28, y: 0.16, x: -0.08, duration: 0.45, ease: 'back.out(2.2)' }, t + 0.04)
+          // Brazo derecho levantado con estilo
+          .to(rightShoulder.rotation, { x: -0.28, y: -0.15, z: -2.48, duration: 0.45, ease: 'back.out(2)' }, t)
+          .to(rightElbow.rotation, { x: -0.22, z: -0.12, duration: 0.42, ease: 'back.out(1.8)' }, t)
+          .to(rightWrist.rotation, { x: -0.2, z: 0.25, duration: 0.42 }, t)
+          // Dedo índice/medio extendidos y los demás flexionados con estilo
+          .to([rightFingers[0].rotation, rightFingers[1].rotation], { x: -0.2, duration: 0.3 }, t + 0.1)
+          .to([rightFingers[2].rotation, rightFingers[3].rotation], { x: 0.85, duration: 0.3 }, t + 0.1)
+          // Brazo izquierdo apoyado en la cadera con actitud
+          .to(leftShoulder.rotation, { x: 0.18, y: 0.35, z: 0.95, duration: 0.42, ease: 'back.out(1.6)' }, t)
+          .to(leftElbow.rotation, { x: -1.45, y: -0.55, z: -0.35, duration: 0.42, ease: 'back.out(1.6)' }, t)
+          .to(leftWrist.rotation, { x: 0.3, z: -0.4, duration: 0.42 }, t)
+          // Piernas asimétricas con estilo de baile
+          .to(rightHip.rotation, { x: -0.12, z: -0.18, duration: 0.42, ease: 'back.out(1.6)' }, t)
+          .to(rightKnee.rotation, { x: 0.25, duration: 0.42, ease: 'back.out(1.6)' }, t)
+          .to(leftHip.rotation, { x: -0.68, z: 0.24, duration: 0.42, ease: 'back.out(1.6)' }, t)
+          .to(leftKnee.rotation, { x: 1.15, duration: 0.42, ease: 'back.out(1.6)' }, t)
+          // Guiño/destello de ojos en la pose final
+          .to(rightEye.scale, { y: 0.15, x: 1.25, duration: 0.18, yoyo: true, repeat: 1 }, t + 0.22)
+          .to(leftEye.scale, { x: 1.2, y: 1.2, duration: 0.35 }, t);
+
+        // Mantener la pose final divertida un instante y recuperar postura inicial naturalmente
+        appendReturnToRestPose(tl, t + 1.05, 0.78, 'power2.inOut');
+      }
+
+      function playCelebrateAnimation() {
+        stopCurrentAnimation();
+        currentState = ROBOT_STATE.CELEBRATING;
+        showRobotSpeech('✨ ¡CRAFT. CODE. CREATE! ✨');
+
+        const tl = gsap.timeline({
+          onComplete: () => {
+            currentState = ROBOT_STATE.IDLE;
+            activeTimeline = null;
+          }
+        });
+        activeTimeline = tl;
+
+        tl.to(animCtrl, { idleWeight: 0, duration: 0.2, ease: 'power2.out' }, 0);
+
+        // 1. El robot mira al espectador + 2. Inclina ligeramente la cabeza como sorprendido
+        tl.to(robotRoot.rotation, { y: 0.0, z: 0, duration: 0.32, ease: 'power2.out' }, 0)
+          .to(headGroup.rotation, { x: -0.10, y: 0.0, z: -0.24, duration: 0.35, ease: 'back.out(2)' }, 0)
+          .to([leftEye.scale, rightEye.scale], { x: 1.38, y: 1.42, duration: 0.3, ease: 'back.out(2.2)' }, 0.04)
+          // Anticipación: pequeña flexión antes de levantar los brazos y saltar
+          .to(robotRoot.position, { y: 0.14, duration: 0.28, ease: 'power2.in' }, 0.12)
+          .to(torsoGroup.rotation, { x: 0.18, duration: 0.28, ease: 'power2.in' }, 0.12)
+          .to([rightHip.rotation, leftHip.rotation], { x: -0.68, duration: 0.28 }, 0.12)
+          .to([rightKnee.rotation, leftKnee.rotation], { x: 1.18, duration: 0.28 }, 0.12)
+          .to([rightAnkle.rotation, leftAnkle.rotation], { x: 0.42, duration: 0.28 }, 0.12);
+
+        // 3. Levanta ambos brazos progresivamente + 4. Realiza un salto de emoción + 5. Abre los brazos ampliamente
+        tl.call(() => spawnCelebrationVFX(1.0), null, 0.40)
+          .to(robotRoot.position, { y: 0.92, duration: 0.42, ease: 'power2.out' }, 0.40)
+          .to(torsoGroup.rotation, { x: -0.22, duration: 0.42, ease: 'back.out(1.6)' }, 0.40)
+          .to(headGroup.rotation, { x: -0.24, z: 0.08, duration: 0.40, ease: 'back.out(1.6)' }, 0.40)
+          // Brazos se abren ampliamente en V de euforia
+          .to(rightShoulder.rotation, { x: -0.32, y: -0.25, z: -2.42, duration: 0.42, ease: 'back.out(1.8)' }, 0.36)
+          .to(leftShoulder.rotation, { x: -0.32, y: 0.25, z: 2.42, duration: 0.42, ease: 'back.out(1.8)' }, 0.36)
+          .to([rightElbow.rotation, leftElbow.rotation], { x: -0.22, y: 0, z: 0, duration: 0.38 }, 0.38)
+          .to([rightWrist.rotation, leftWrist.rotation], { x: -0.25, z: 0, duration: 0.38 }, 0.38)
+          // Manos completamente abiertas de alegría
+          .to(rightFingers.concat(leftFingers).map(f => f.rotation), { x: -0.25, duration: 0.3 }, 0.40)
+          // Piernas extendidas de alegría en el aire
+          .to(rightHip.rotation, { x: -0.05, z: -0.22, duration: 0.38, ease: 'power2.out' }, 0.40)
+          .to(leftHip.rotation, { x: -0.05, z: 0.22, duration: 0.38, ease: 'power2.out' }, 0.40)
+          .to([rightKnee.rotation, leftKnee.rotation], { x: 0.20, duration: 0.38, ease: 'power2.out' }, 0.40)
+          .to([rightAnkle.rotation, leftAnkle.rotation], { x: -0.22, duration: 0.38 }, 0.40)
+
+          // Aterrizaje amortiguado del primer salto
+          .to(robotRoot.position, { y: 0.18, duration: 0.34, ease: 'power2.in' }, 0.82)
+          .to([rightHip.rotation, leftHip.rotation], { x: -0.52, z: (i) => i === 0 ? -0.12 : 0.12, duration: 0.26 }, 0.90)
+          .to([rightKnee.rotation, leftKnee.rotation], { x: 0.95, duration: 0.26 }, 0.90)
+          .to([rightAnkle.rotation, leftAnkle.rotation], { x: 0.32, duration: 0.26 }, 0.90)
+          .to(robotRoot.position, { y: 0.28, duration: 0.2, ease: 'sine.out' }, 1.16);
+
+        // 6. Inclina el torso hacia los lados con entusiasmo (balanceo eufórico izquierda-derecha)
+        const swayStart = 1.22;
+        for (let s = 0; s < 3; s++) {
+          const dir = s % 2 === 0 ? 1 : -1;
+          const st = swayStart + s * 0.28;
+          tl.to(torsoGroup.rotation, { z: dir * 0.22, x: -0.10, y: dir * 0.14, duration: 0.28, ease: 'sine.inOut' }, st)
+            .to(pelvisGroup.rotation, { z: -dir * 0.14, y: -dir * 0.12, duration: 0.28, ease: 'sine.inOut' }, st)
+            .to(headGroup.rotation, { z: dir * 0.24, y: dir * 0.15, duration: 0.28, ease: 'sine.inOut' }, st)
+            .to(rightShoulder.rotation, { z: -2.25 + dir * 0.28, duration: 0.28, ease: 'sine.inOut' }, st)
+            .to(leftShoulder.rotation, { z: 2.25 + dir * 0.28, duration: 0.28, ease: 'sine.inOut' }, st)
+            .to(robotRoot.position, { x: dir * 0.14, y: 0.34, duration: 0.14, yoyo: true, repeat: 1, ease: 'sine.inOut' }, st);
+        }
+
+        // 7. Realiza dos pequeños saltos consecutivos de euforia
+        const hopsStart = swayStart + 3 * 0.28 + 0.04;
+        for (let h = 0; h < 2; h++) {
+          const ht = hopsStart + h * 0.44;
+          const hopDir = h === 0 ? -1 : 1;
+
+          tl.to(robotRoot.position, { y: 0.64, x: hopDir * 0.1, duration: 0.22, ease: 'power2.out' }, ht)
+            .to(robotRoot.rotation, { y: hopDir * 0.18, duration: 0.22, ease: 'sine.out' }, ht)
+            .to([rightKnee.rotation, leftKnee.rotation], { x: 0.25, duration: 0.20, ease: 'power2.out' }, ht)
+            .to([rightAnkle.rotation, leftAnkle.rotation], { x: -0.15, duration: 0.20 }, ht)
+            .to(rightShoulder.rotation, { z: -2.55, x: -0.45, duration: 0.22, ease: 'back.out(2)' }, ht)
+            .to(leftShoulder.rotation, { z: 2.55, x: -0.45, duration: 0.22, ease: 'back.out(2)' }, ht)
+            // Caída suave del salto
+            .to(robotRoot.position, { y: 0.18, duration: 0.22, ease: 'power2.in' }, ht + 0.22)
+            .to([rightKnee.rotation, leftKnee.rotation], { x: 0.88, duration: 0.22, ease: 'power2.out' }, ht + 0.22)
+            .to([rightAnkle.rotation, leftAnkle.rotation], { x: 0.30, duration: 0.22 }, ht + 0.22)
+            .to(rightShoulder.rotation, { z: -1.95, duration: 0.22 }, ht + 0.22)
+            .to(leftShoulder.rotation, { z: 1.95, duration: 0.22 }, ht + 0.22);
+        }
+
+        // 8. Levanta un brazo en señal de victoria + 9. Termina con una pose de celebración divertida
+        const victoryTime = hopsStart + 2 * 0.44 + 0.04;
+        tl.call(() => spawnCelebrationVFX(0.65), null, victoryTime)
+          .to(robotRoot.position, { x: 0, y: 0.32, duration: 0.38, ease: 'back.out(2)' }, victoryTime)
+          .to(robotRoot.rotation, { y: 0.12, z: -0.05, duration: 0.38, ease: 'back.out(1.8)' }, victoryTime)
+          .to(pelvisGroup.rotation, { z: 0.14, y: -0.14, duration: 0.38, ease: 'back.out(1.8)' }, victoryTime)
+          .to(torsoGroup.rotation, { x: -0.16, z: -0.14, y: 0.14, duration: 0.38, ease: 'back.out(1.8)' }, victoryTime)
+          .to(headGroup.rotation, { x: -0.14, y: -0.08, z: -0.22, duration: 0.42, ease: 'back.out(2.2)' }, victoryTime)
+          // Brazo derecho en todo lo alto con puño de victoria
+          .to(rightShoulder.rotation, { x: -0.35, y: 0.1, z: -2.62, duration: 0.42, ease: 'back.out(2.2)' }, victoryTime)
+          .to(rightElbow.rotation, { x: -0.25, z: -0.15, duration: 0.38, ease: 'back.out(1.8)' }, victoryTime)
+          .to(rightWrist.rotation, { x: 0.1, z: 0.15, duration: 0.35 }, victoryTime)
+          .to(rightFingers.map(f => f.rotation), { x: 1.15, z: 0, duration: 0.28, ease: 'power2.out' }, victoryTime + 0.05)
+          .to(rightThumb.rotation, { x: 0.45, z: -0.95, duration: 0.28 }, victoryTime + 0.05)
+          // Brazo izquierdo flexionado celebrando con energía
+          .to(leftShoulder.rotation, { x: -0.35, y: -0.2, z: 0.78, duration: 0.38, ease: 'back.out(1.8)' }, victoryTime)
+          .to(leftElbow.rotation, { x: -1.45, y: -0.25, z: 0.22, duration: 0.38, ease: 'back.out(1.8)' }, victoryTime)
+          .to(leftFingers.map(f => f.rotation), { x: 1.1, z: 0, duration: 0.28 }, victoryTime + 0.05)
+          // Piernas en pose heroica dinámica
+          .to(rightHip.rotation, { x: -0.14, z: -0.14, duration: 0.38, ease: 'back.out(1.6)' }, victoryTime)
+          .to(rightKnee.rotation, { x: 0.28, duration: 0.38, ease: 'back.out(1.6)' }, victoryTime)
+          .to(leftHip.rotation, { x: -0.64, z: 0.18, duration: 0.38, ease: 'back.out(1.6)' }, victoryTime)
+          .to(leftKnee.rotation, { x: 1.05, duration: 0.38, ease: 'back.out(1.6)' }, victoryTime)
+          .to([leftEye.scale, rightEye.scale], { x: 1.28, y: 1.32, duration: 0.35, ease: 'back.out(2)' }, victoryTime);
+
+        // Volver tranquilamente a su posición de reposo
+        appendReturnToRestPose(tl, victoryTime + 0.95, 0.82, 'power2.inOut');
+      }
+
+      // Pequeña reacción divertida cuando el usuario hace clic sobre el robot
+      function playClickReactionAnimation() {
+        stopCurrentAnimation();
+        currentState = ROBOT_STATE.REACTING;
+        showRobotSpeech('⚡ ¡Jajaja! ¡Eso hace cosquillas cibernéticas! 😄', 2000);
+
+        // Pequeño destello de estrellas al tocarlo
+        spawnCelebrationVFX(0.35);
+
+        const tl = gsap.timeline({
+          onComplete: () => {
+            currentState = ROBOT_STATE.IDLE;
+            activeTimeline = null;
+          }
+        });
+        activeTimeline = tl;
+
+        tl.to(animCtrl, { idleWeight: 0, duration: 0.15, ease: 'power2.out' }, 0)
+          // Saltito de sorpresa simpática
+          .to(robotRoot.position, { y: 0.56, duration: 0.24, ease: 'power2.out' }, 0)
+          .to(robotRoot.rotation, { y: 0.04, z: 0.08, duration: 0.24, ease: 'back.out(2)' }, 0)
+          .to(torsoGroup.rotation, { x: -0.14, z: -0.12, duration: 0.24, ease: 'back.out(2)' }, 0)
+          .to(headGroup.rotation, { x: -0.16, z: 0.26, y: -0.08, duration: 0.26, ease: 'back.out(2.4)' }, 0)
+          .to([leftEye.scale, rightEye.scale], { x: 1.35, y: 0.22, duration: 0.15, yoyo: true, repeat: 1 }, 0)
+          .to(rightShoulder.rotation, { z: -1.45, x: -0.45, duration: 0.24, ease: 'back.out(2)' }, 0)
+          .to(leftShoulder.rotation, { z: 1.45, x: -0.45, duration: 0.24, ease: 'back.out(2)' }, 0)
+          .to([rightElbow.rotation, leftElbow.rotation], { x: -1.15, duration: 0.24 }, 0)
+          // Aterrizaje y risita corporal (2 pequeños rebotes de hombros y cabeza)
+          .to(robotRoot.position, { y: 0.22, duration: 0.26, ease: 'bounce.out' }, 0.24)
+          .to(headGroup.rotation, { z: -0.20, x: 0.08, duration: 0.18, yoyo: true, repeat: 1, ease: 'sine.inOut' }, 0.32)
+          .to(torsoGroup.position, { y: 0.46, duration: 0.12, yoyo: true, repeat: 3, ease: 'sine.inOut' }, 0.30)
+          .to([rightShoulder.rotation, leftShoulder.rotation], {
+            x: -0.25,
+            duration: 0.12,
+            yoyo: true,
+            repeat: 3,
+            ease: 'sine.inOut'
+          }, 0.30);
+
+        appendReturnToRestPose(tl, 0.85, 0.55, 'power2.inOut');
+      }
+
+      // ----------------------------------------------------------------------
+      // 9. INTERACTION & PUBLIC API (SIN ROMPER FUNCIONES GLOBALES)
+      // ----------------------------------------------------------------------
+      const pointerTarget = { x: 0, y: 0 };
+      const pointerCurrent = { x: 0, y: 0 };
+      let lastPointerMoveTime = performance.now();
+      let pointerDistanceToCenter = 1.0;
+      let buttonLookOverride = null;
+
+      // Miradas autónomas cuando el cursor está inactivo
+      const autonomousGaze = {
+        yaw: 0,
+        pitch: 0,
+        roll: 0,
+        postureShiftX: 0,
+        postureShiftZ: 0,
+        timer: 0,
+        nextInterval: 2.8
+      };
+      let blinkTimer = 0;
+      let nextBlinkInterval = 3.2;
+
+      window.addEventListener('pointermove', (e) => {
+        const nx = (e.clientX / window.innerWidth) * 2 - 1;
+        const ny = -(e.clientY / window.innerHeight) * 2 + 1;
+        pointerTarget.x = nx;
+        pointerTarget.y = ny;
+        pointerDistanceToCenter = Math.hypot(nx, ny);
+        lastPointerMoveTime = performance.now();
+      });
+
+      // Al hacer clic sobre el robot (canvas), reacciona con una animación simpática
+      // sin interrumpir bruscamente si ya está ejecutando un baile o celebración
+      canvas.addEventListener('pointerdown', () => {
+        if (currentState === ROBOT_STATE.IDLE) {
+          triggerRobotAction('react');
+        }
+      });
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      function showRobotSpeech(text, duration = 2600) {
+        console.log('[Robot]', text);
+      }
+
+      function triggerRobotAction(action) {
+        if (!robotRoot) return;
+
+        // Evita reiniciar la misma animación si el usuario hace clic repetidamente en el mismo botón activo,
+        // pero permite cambiar limpiamente de un botón diferente al otro cancelando la anterior.
+        if (action === 'wave') {
+          if (currentState === ROBOT_STATE.WAVING) return;
+          playWaveAnimation();
+        } else if (action === 'dance') {
+          if (currentState === ROBOT_STATE.DANCING) return;
+          playDanceAnimation();
+        } else if (action === 'celebrate') {
+          if (currentState === ROBOT_STATE.CELEBRATING) return;
+          playCelebrateAnimation();
+        } else if (action === 'react') {
+          if (currentState !== ROBOT_STATE.IDLE) return;
+          playClickReactionAnimation();
+        }
+      }
+
+      function robotLookAtButton(index, label) {
+        const pitchByIndex = [0.22, 0.06, -0.10, -0.26];
+        buttonLookOverride = {
+          yaw: 0.52,
+          pitch: pitchByIndex[index] || 0,
+          roll: -0.12
+        };
+        showRobotSpeech(`Explorando: ${label} ⚡`, 1600);
+      }
+
+      function robotResetLook() {
+        buttonLookOverride = null;
+      }
+
+      // Exponer exactamente las mismas funciones globales para los botones
+      window.triggerRobotAction = triggerRobotAction;
+      window.robotLookAtButton = robotLookAtButton;
+      window.robotResetLook = robotResetLook;
+
+      // Saludo automático al cargar
+      setTimeout(() => triggerRobotAction('wave'), 700);
+
+      // ----------------------------------------------------------------------
+      // 10. ANIMATION LOOP — PERSONALIDAD AUTOMÁTICA Y VIDA PROCEDURAL
+      // ----------------------------------------------------------------------
+      function animate() {
+        requestAnimationFrame(animate);
+        const dt = Math.min(clock.getDelta(), 0.05);
+        const elapsed = clock.elapsedTime;
+
+        pointerCurrent.x = lerp(pointerCurrent.x, pointerTarget.x, 0.08);
+        pointerCurrent.y = lerp(pointerCurrent.y, pointerTarget.y, 0.08);
+
+        const w = animCtrl.idleWeight;
+        const timeSincePointer = (performance.now() - lastPointerMoveTime) * 0.001;
+        const isPointerActive = timeSincePointer < 3.5;
+
+        // 1. GENERADOR DE CURIOSIDAD Y MIRADAS AUTÓNOMAS EN REPOSO
+        autonomousGaze.timer += dt;
+        if (autonomousGaze.timer > autonomousGaze.nextInterval) {
+          autonomousGaze.timer = 0;
+          autonomousGaze.nextInterval = 2.2 + Math.random() * 2.8;
+
+          if (Math.random() < 0.72) {
+            // Mirar con curiosidad hacia distintas direcciones e inclinar la cabeza
+            autonomousGaze.yaw = (Math.random() - 0.5) * 0.68;
+            autonomousGaze.pitch = (Math.random() - 0.45) * 0.32;
+            autonomousGaze.roll = (Math.random() - 0.5) * 0.24;
+            autonomousGaze.postureShiftX = (Math.random() - 0.5) * 0.06;
+            autonomousGaze.postureShiftZ = (Math.random() - 0.5) * 0.05;
+          } else {
+            // Volver la atención al centro hacia el espectador
+            autonomousGaze.yaw = 0.12;
+            autonomousGaze.pitch = -0.02;
+            autonomousGaze.roll = -0.05;
+            autonomousGaze.postureShiftX = 0;
+            autonomousGaze.postureShiftZ = 0;
+          }
+        }
+
+        // 2. MOVIMIENTO PROCEDURAL EN REPOSO (RESPIRACIÓN, CAMBIOS DE POSTURA, MICRO-MOVIMIENTOS)
+        if (w > 0.001) {
+          // Respiración orgánica multicapa + flotación sutil
+          const breathCycle = Math.sin(elapsed * 2.1);
+          const secondaryWave = Math.sin(elapsed * 1.15);
+          const tertiaryWave = Math.cos(elapsed * 0.75);
+
+          // Cuando el cursor se acerca al robot, reacciona con curiosidad acercándose un poco
+          const proximityCuriosity = (isPointerActive && pointerDistanceToCenter < 0.55)
+            ? (1 - pointerDistanceToCenter / 0.55)
+            : 0;
+
+          const targetRootY = REST_POSE.rootPos.y + breathCycle * 0.085 + proximityCuriosity * 0.04;
+          const targetRootX = autonomousGaze.postureShiftX * (1 - proximityCuriosity * 0.5);
+          const targetRootZRot = secondaryWave * 0.022 + autonomousGaze.postureShiftZ * 0.5;
+          const targetRootYRot = REST_POSE.rootRot.y + tertiaryWave * 0.06 + (isPointerActive ? pointerCurrent.x * 0.12 : 0);
+
+          robotRoot.position.y = lerp(robotRoot.position.y, targetRootY, 0.12 * w);
+          robotRoot.position.x = lerp(robotRoot.position.x, targetRootX, 0.05 * w);
+          robotRoot.rotation.z = lerp(robotRoot.rotation.z, targetRootZRot, 0.08 * w);
+          robotRoot.rotation.y = lerp(robotRoot.rotation.y, targetRootYRot, 0.06 * w);
+
+          // Pelvis y caderas compensan suavemente el peso corporal
+          const targetPelvisZ = -secondaryWave * 0.035 + autonomousGaze.postureShiftZ;
+          const targetPelvisY = tertiaryWave * 0.05;
+          pelvisGroup.rotation.z = lerp(pelvisGroup.rotation.z, targetPelvisZ, 0.08 * w);
+          pelvisGroup.rotation.y = lerp(pelvisGroup.rotation.y, targetPelvisY, 0.08 * w);
+
+          // Torso simula respiración (expansión de pecho al inhalar) + reacción al cursor
+          const breathPitch = -breathCycle * 0.035 + proximityCuriosity * 0.08;
+          const torsoYawTarget = isPointerActive
+            ? pointerCurrent.x * 0.18
+            : autonomousGaze.yaw * 0.25;
+          const torsoPitchTarget = isPointerActive
+            ? (-pointerCurrent.y * 0.09 + breathPitch)
+            : (autonomousGaze.pitch * 0.2 + breathPitch);
+
+          torsoGroup.rotation.y = lerp(torsoGroup.rotation.y, torsoYawTarget, 0.07 * w);
+          torsoGroup.rotation.x = lerp(torsoGroup.rotation.x, torsoPitchTarget, 0.07 * w);
+          torsoGroup.rotation.z = lerp(torsoGroup.rotation.z, secondaryWave * 0.025, 0.07 * w);
+
+          // Seguimiento de cabeza y cuello (cursor activo vs curiosidad autónoma)
+          let targetYaw, targetPitch, targetRoll;
+          if (buttonLookOverride) {
+            targetYaw = buttonLookOverride.yaw;
+            targetPitch = buttonLookOverride.pitch;
+            targetRoll = buttonLookOverride.roll;
+          } else if (isPointerActive) {
+            targetYaw = 0.10 + pointerCurrent.x * 0.48;
+            targetPitch = -pointerCurrent.y * 0.30;
+            // Inclinación simpática de cabeza cuando el cursor se acerca al centro
+            targetRoll = -0.05 - pointerCurrent.x * 0.10 - proximityCuriosity * 0.14;
+          } else {
+            targetYaw = autonomousGaze.yaw + Math.sin(elapsed * 0.9) * 0.05;
+            targetPitch = autonomousGaze.pitch + Math.cos(elapsed * 1.3) * 0.04;
+            targetRoll = autonomousGaze.roll + Math.sin(elapsed * 1.1) * 0.05;
+          }
+
+          headGroup.rotation.y = lerp(headGroup.rotation.y, targetYaw, 0.11 * w);
+          headGroup.rotation.x = lerp(headGroup.rotation.x, targetPitch, 0.11 * w);
+          headGroup.rotation.z = lerp(headGroup.rotation.z, targetRoll, 0.11 * w);
+          neckGroup.rotation.y = lerp(neckGroup.rotation.y, targetYaw * 0.2, 0.08 * w);
+          neckGroup.rotation.x = lerp(neckGroup.rotation.x, breathCycle * 0.02, 0.08 * w);
+
+          // Ligero balanceo natural de hombros, codos y muñecas con la respiración
+          rightShoulder.position.y = lerp(rightShoulder.position.y, 0.34 + breathCycle * 0.014, 0.1 * w);
+          leftShoulder.position.y = lerp(leftShoulder.position.y, 0.34 + breathCycle * 0.014, 0.1 * w);
+
+          rightShoulder.rotation.z = lerp(
+            rightShoulder.rotation.z,
+            REST_POSE.rShoulderRot.z - breathCycle * 0.035 - proximityCuriosity * 0.06,
+            0.08 * w
+          );
+          rightShoulder.rotation.x = lerp(
+            rightShoulder.rotation.x,
+            REST_POSE.rShoulderRot.x + Math.cos(elapsed * 1.5) * 0.04,
+            0.08 * w
+          );
+          rightElbow.rotation.x = lerp(
+            rightElbow.rotation.x,
+            REST_POSE.rElbowRot.x + Math.sin(elapsed * 1.8) * 0.05 - proximityCuriosity * 0.12,
+            0.08 * w
+          );
+          rightWrist.rotation.z = lerp(
+            rightWrist.rotation.z,
+            Math.sin(elapsed * 2.2) * 0.06,
+            0.1 * w
+          );
+
+          leftShoulder.rotation.z = lerp(
+            leftShoulder.rotation.z,
+            REST_POSE.lShoulderRot.z + breathCycle * 0.035 + proximityCuriosity * 0.06,
+            0.08 * w
+          );
+          leftShoulder.rotation.x = lerp(
+            leftShoulder.rotation.x,
+            REST_POSE.lShoulderRot.x + Math.sin(elapsed * 1.4) * 0.04,
+            0.08 * w
+          );
+          leftElbow.rotation.x = lerp(
+            leftElbow.rotation.x,
+            REST_POSE.lElbowRot.x + Math.cos(elapsed * 1.9) * 0.05,
+            0.08 * w
+          );
+          leftWrist.rotation.x = lerp(
+            leftWrist.rotation.x,
+            REST_POSE.lWristRot.x + Math.sin(elapsed * 2.6) * 0.08,
+            0.1 * w
+          );
+
+          // Movimientos discretos y orgánicos de los dedos en ambas manos
+          rightFingers.forEach((f, idx) => {
+            const curl = Math.sin(elapsed * 2.8 + idx * 0.65) * 0.12 + 0.08;
+            f.rotation.x = lerp(f.rotation.x, curl, 0.12 * w);
+          });
+          leftFingers.forEach((f, idx) => {
+            const curl = Math.sin(elapsed * 3.1 + idx * 0.7 + 1.2) * 0.14 + 0.10;
+            f.rotation.x = lerp(f.rotation.x, curl, 0.12 * w);
+          });
+
+          // Flexión sutil de rodillas y tobillos para mantener equilibrio vivo
+          rightKnee.rotation.x = lerp(
+            rightKnee.rotation.x,
+            REST_POSE.rKneeRot.x - breathCycle * 0.04,
+            0.1 * w
+          );
+          leftKnee.rotation.x = lerp(
+            leftKnee.rotation.x,
+            REST_POSE.lKneeRot.x + breathCycle * 0.045,
+            0.1 * w
+          );
+          rightAnkle.rotation.x = lerp(
+            rightAnkle.rotation.x,
+            REST_POSE.rAnkleRot.x + breathCycle * 0.02,
+            0.1 * w
+          );
+          leftAnkle.rotation.x = lerp(
+            leftAnkle.rotation.x,
+            REST_POSE.lAnkleRot.x - breathCycle * 0.02,
+            0.1 * w
+          );
+        }
+
+        // 3. SEGUIMIENTO OCULAR EXPRESIVO Y PARPADEO NATURAL (INCLUYE DOBLE PARPADEO OCASIONAL)
+        if (leftEye && rightEye) {
+          const lookX = isPointerActive ? pointerCurrent.x : (autonomousGaze.yaw * 1.1);
+          const lookY = isPointerActive ? pointerCurrent.y : (-autonomousGaze.pitch * 1.2);
+          const eyeOffsetX = clamp(lookX * 0.075, -0.085, 0.085);
+          const eyeOffsetY = clamp(lookY * 0.055, -0.065, 0.065);
+
+          leftEye.position.x = lerp(leftEye.position.x, -0.26 + eyeOffsetX, 0.18);
+          leftEye.position.y = lerp(leftEye.position.y, -0.02 + eyeOffsetY, 0.18);
+          rightEye.position.x = lerp(rightEye.position.x, 0.26 + eyeOffsetX, 0.18);
+          rightEye.position.y = lerp(rightEye.position.y, -0.02 + eyeOffsetY, 0.18);
+        }
+
+        blinkTimer += dt;
+        if (blinkTimer > nextBlinkInterval && currentState === ROBOT_STATE.IDLE) {
+          blinkTimer = 0;
+          nextBlinkInterval = 2.4 + Math.random() * 2.8;
+          const isDoubleBlink = Math.random() < 0.28;
+
+          gsap.to([leftEye.scale, rightEye.scale], {
+            y: 0.06,
+            x: 1.08,
+            duration: 0.075,
+            yoyo: true,
+            repeat: isDoubleBlink ? 3 : 1,
+            ease: 'power2.inOut'
+          });
+        }
+
+        // 4. ACTUALIZAR PARTÍCULAS AMBIENTALES Y EFECTOS FÍSICOS DE CELEBRACIÓN
+        if (particleSystem) {
+          particleSystem.rotation.y = elapsed * 0.08;
+          particleSystem.position.y = Math.sin(elapsed * 0.9) * 0.12;
+        }
+
+        updateCelebrationVFX(dt, elapsed);
+
+        renderer.render(scene, camera);
+      }
+
+      animate();
+    })();
+  </script>
+</body>
+</html>

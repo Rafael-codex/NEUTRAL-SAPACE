@@ -1,0 +1,3945 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>RAFAEL-CODEX STUDIO | Online Code Editor</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- JSZip for Real ZIP Export & Import -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- Prettier Standalone & Parsers for Real Code Formatting -->
+  <script src="https://unpkg.com/prettier@2.8.8/standalone.js"></script>
+  <script src="https://unpkg.com/prettier@2.8.8/parser-html.js"></script>
+  <script src="https://unpkg.com/prettier@2.8.8/parser-postcss.js"></script>
+  <script src="https://unpkg.com/prettier@2.8.8/parser-babel.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            codex: {
+              bg: '#09090d',
+              panel: '#111118',
+              surface: '#181824',
+              hover: '#222233',
+              border: '#27273a',
+              violet: '#8b5cf6',
+              purple: '#a855f7',
+              glow: '#c084fc',
+              deep: '#6d28d9'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    :root {
+      --bg-primary: #09090d;
+      --bg-panel: #111118;
+      --bg-surface: #181824;
+      --border-subtle: #27273a;
+      --accent-primary: #8b5cf6;
+      --accent-secondary: #a855f7;
+      --accent-glow: rgba(139, 92, 246, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      scrollbar-width: thin;
+      scrollbar-color: #2e2e44 #0d0d14;
+    }
+
+    *::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    *::-webkit-scrollbar-track {
+      background: #0d0d14;
+    }
+    *::-webkit-scrollbar-thumb {
+      background: #2e2e44;
+      border-radius: 9999px;
+    }
+    *::-webkit-scrollbar-thumb:hover {
+      background: #8b5cf6;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: #e2e8f0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Futuristic Neon Effects */
+    .codex-glow {
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.22), inset 0 0 12px rgba(168, 85, 247, 0.08);
+    }
+    .codex-glow-sm {
+      box-shadow: 0 0 12px rgba(139, 92, 246, 0.3);
+    }
+    .codex-gradient-text {
+      background: linear-gradient(135deg, #e9d5ff 0%, #c084fc 45%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .codex-btn-primary {
+      background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
+      border: 1px solid rgba(192, 132, 252, 0.35);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .codex-btn-primary:hover {
+      background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+      box-shadow: 0 0 16px rgba(168, 85, 247, 0.45);
+      transform: translateY(-1px);
+    }
+    .codex-btn-primary:active {
+      transform: translateY(0);
+    }
+
+    /* Resizable Splitters */
+    .splitter-v {
+      width: 5px;
+      cursor: col-resize;
+      background: #1d1d2b;
+      transition: background 0.15s ease;
+      position: relative;
+      z-index: 20;
+      flex-shrink: 0;
+    }
+    .splitter-v:hover, .splitter-v.dragging {
+      background: #8b5cf6;
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
+    }
+    .splitter-h {
+      height: 5px;
+      cursor: row-resize;
+      background: #1d1d2b;
+      transition: background 0.15s ease;
+      position: relative;
+      z-index: 20;
+      flex-shrink: 0;
+    }
+    .splitter-h:hover, .splitter-h.dragging {
+      background: #8b5cf6;
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
+    }
+
+    /* Tab transitions */
+    .editor-tab {
+      transition: all 0.15s ease;
+      border-top: 2px solid transparent;
+    }
+    .editor-tab.active {
+      background-color: #0c0c12;
+      border-top-color: #a855f7;
+      color: #ffffff;
+    }
+
+    /* Device Frame Simulation for Preview */
+    .preview-canvas-bg {
+      background-color: #0d0d14;
+      background-image: radial-gradient(#232336 1px, transparent 1px);
+      background-size: 18px 18px;
+    }
+    .device-frame-desktop {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 0;
+    }
+    .device-frame-tablet {
+      width: 768px;
+      height: 94%;
+      max-width: 96%;
+      border: 10px solid #232334;
+      border-radius: 24px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(139, 92, 246, 0.25);
+    }
+    .device-frame-mobile {
+      width: 375px;
+      height: 667px;
+      max-height: 94%;
+      max-width: 94%;
+      border: 12px solid #232334;
+      border-radius: 36px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(139, 92, 246, 0.3);
+    }
+
+    /* Glassmorphism Overlays */
+    .glass-modal {
+      background: rgba(17, 17, 24, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    /* Dropdown menus */
+    .menu-dropdown {
+      display: none;
+    }
+    .menu-group:hover .menu-dropdown,
+    .menu-dropdown.show {
+      display: block;
+    }
+
+    /* Prevent iframe capturing mouse events while dragging splitters */
+    body.is-resizing iframe {
+      pointer-events: none !important;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+    .animate-pulse-glow {
+      animation: pulseGlow 2.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="h-screen w-screen flex flex-col bg-codex-bg text-slate-200 overflow-hidden">
+
+  <!-- ===================================================================== -->
+  <!-- 1. TOP HEADER & MENU BAR                                              -->
+  <!-- ===================================================================== -->
+  <header class="h-12 bg-codex-panel border-b border-codex-border flex items-center justify-between px-2 sm:px-3 shrink-0 z-30">
+    <!-- Left: Brand + Top Menus + Project Badge -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      <!-- Mobile Drawer Button -->
+      <button id="btnMobileDrawer" class="lg:hidden w-8 h-8 rounded-lg bg-codex-surface hover:bg-codex-hover flex items-center justify-center text-slate-300" title="Explorador de Archivos">
+        <i class="fa-solid fa-bars text-sm"></i>
+      </button>
+
+      <!-- Brand Logo (Opens Welcome Modal) -->
+      <button id="btnOpenWelcome" class="flex items-center gap-2.5 group focus:outline-none" title="Pantalla de Bienvenida">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 flex items-center justify-center shadow-lg codex-glow-sm group-hover:scale-105 transition-transform">
+          <i class="fa-solid fa-code text-white text-sm"></i>
+        </div>
+        <div class="text-left hidden sm:block">
+          <div class="flex items-center gap-1.5">
+            <span class="font-extrabold tracking-wider text-xs sm:text-sm codex-gradient-text">RAFAEL-CODEX</span>
+            <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 border border-violet-500/30">STUDIO</span>
+          </div>
+          <p class="text-[10px] text-slate-400 -mt-0.5 tracking-tight hidden xl:block">ONLINE CODE EDITOR</p>
+        </div>
+      </button>
+
+      <div class="h-5 w-[1px] bg-codex-border hidden md:block"></div>
+
+      <!-- Desktop Dropdown Menus -->
+      <nav class="hidden md:flex items-center gap-0.5 text-xs font-medium text-slate-300">
+        <!-- Menu: Proyecto -->
+        <div class="relative menu-group">
+          <button class="px-2.5 py-1.5 rounded-md hover:bg-codex-surface hover:text-white flex items-center gap-1.5 transition">
+            <span>Archivo</span>
+            <i class="fa-solid fa-chevron-down text-[9px] text-slate-500"></i>
+          </button>
+          <div class="menu-dropdown absolute left-0 top-full pt-1 w-60 z-50">
+            <div class="bg-codex-panel border border-codex-border rounded-xl shadow-2xl py-1.5 text-xs">
+              <button data-action="new-project" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-folder-plus w-4 text-violet-400"></i> Nuevo Proyecto...</span>
+              </button>
+              <button data-action="open-project-modal" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-folder-open w-4 text-violet-400"></i> Abrir Proyecto...</span>
+              </button>
+              <div class="my-1 border-t border-codex-border"></div>
+              <button data-action="new-file" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-file-circle-plus w-4 text-emerald-400"></i> Nuevo Archivo...</span>
+              </button>
+              <button data-action="new-folder" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-folder-tree w-4 text-amber-400"></i> Nueva Carpeta...</span>
+              </button>
+              <div class="my-1 border-t border-codex-border"></div>
+              <button data-action="save-project" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-floppy-disk w-4 text-sky-400"></i> Guardar Proyecto</span>
+                <span class="text-[10px] text-slate-500 font-mono">Ctrl+S</span>
+              </button>
+              <button data-action="save-as" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-file-signature w-4 text-purple-400"></i> Guardar Como...</span>
+              </button>
+              <div class="my-1 border-t border-codex-border"></div>
+              <button data-action="import-files" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-file-import w-4 text-teal-400"></i> Importar Archivos / ZIP</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Menu: Exportar / Descargar -->
+        <div class="relative menu-group">
+          <button class="px-2.5 py-1.5 rounded-md hover:bg-codex-surface hover:text-white flex items-center gap-1.5 transition">
+            <span>Exportar</span>
+            <i class="fa-solid fa-chevron-down text-[9px] text-slate-500"></i>
+          </button>
+          <div class="menu-dropdown absolute left-0 top-full pt-1 w-64 z-50">
+            <div class="bg-codex-panel border border-codex-border rounded-xl shadow-2xl py-1.5 text-xs">
+              <button data-action="download-html" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center gap-2.5 text-left">
+                <i class="fa-brands fa-html5 w-4 text-orange-400 text-sm"></i>
+                <div>
+                  <div class="font-semibold">Descargar HTML Autónomo</div>
+                  <div class="text-[10px] text-slate-400">Un solo archivo con CSS y JS integrados</div>
+                </div>
+              </button>
+              <button data-action="download-project-files" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center gap-2.5 text-left">
+                <i class="fa-solid fa-copy w-4 text-sky-400 text-sm"></i>
+                <div>
+                  <div class="font-semibold">Descargar Proyecto (Archivos)</div>
+                  <div class="text-[10px] text-slate-400">Exporta HTML, CSS y JS por separado</div>
+                </div>
+              </button>
+              <button data-action="download-zip" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center gap-2.5 text-left">
+                <i class="fa-solid fa-file-zipper w-4 text-amber-400 text-sm"></i>
+                <div>
+                  <div class="font-semibold">Descargar Paquete ZIP</div>
+                  <div class="text-[10px] text-slate-400">Empaqueta todo el proyecto con JSZip</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Menu: Editar -->
+        <div class="relative menu-group">
+          <button class="px-2.5 py-1.5 rounded-md hover:bg-codex-surface hover:text-white flex items-center gap-1.5 transition">
+            <span>Editar</span>
+            <i class="fa-solid fa-chevron-down text-[9px] text-slate-500"></i>
+          </button>
+          <div class="menu-dropdown absolute left-0 top-full pt-1 w-60 z-50">
+            <div class="bg-codex-panel border border-codex-border rounded-xl shadow-2xl py-1.5 text-xs">
+              <button data-action="editor-undo" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-rotate-left w-4 text-slate-400"></i> Deshacer</span>
+                <span class="text-[10px] text-slate-500 font-mono">Ctrl+Z</span>
+              </button>
+              <button data-action="editor-redo" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-rotate-right w-4 text-slate-400"></i> Rehacer</span>
+                <span class="text-[10px] text-slate-500 font-mono">Ctrl+Y</span>
+              </button>
+              <div class="my-1 border-t border-codex-border"></div>
+              <button data-action="editor-find" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-magnifying-glass w-4 text-violet-400"></i> Buscar en archivo</span>
+                <span class="text-[10px] text-slate-500 font-mono">Ctrl+F</span>
+              </button>
+              <button data-action="editor-replace" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-repeat w-4 text-purple-400"></i> Buscar y Reemplazar</span>
+                <span class="text-[10px] text-slate-500 font-mono">Ctrl+H</span>
+              </button>
+              <button data-action="global-search" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-folder-magnifying-glass w-4 text-sky-400"></i> Buscar en Proyecto</span>
+              </button>
+              <div class="my-1 border-t border-codex-border"></div>
+              <button data-action="format-code" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-wand-magic-sparkles w-4 text-amber-400"></i> Formatear Código</span>
+                <span class="text-[10px] text-slate-500 font-mono">Alt+Shift+F</span>
+              </button>
+              <button data-action="format-all" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-sparkles w-4 text-emerald-400"></i> Formatear Todo el Proyecto</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Menu: Vista -->
+        <div class="relative menu-group">
+          <button class="px-2.5 py-1.5 rounded-md hover:bg-codex-surface hover:text-white flex items-center gap-1.5 transition">
+            <span>Vista</span>
+            <i class="fa-solid fa-chevron-down text-[9px] text-slate-500"></i>
+          </button>
+          <div class="menu-dropdown absolute left-0 top-full pt-1 w-60 z-50">
+            <div class="bg-codex-panel border border-codex-border rounded-xl shadow-2xl py-1.5 text-xs">
+              <button data-action="toggle-sidebar" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-table-columns w-4 text-violet-400"></i> Alternar Explorador</span>
+                <span class="text-[10px] text-slate-500 font-mono">Ctrl+B</span>
+              </button>
+              <button data-action="toggle-console" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-terminal w-4 text-emerald-400"></i> Alternar Consola</span>
+                <span class="text-[10px] text-slate-500 font-mono">Ctrl+`</span>
+              </button>
+              <button data-action="toggle-minimap" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-map w-4 text-sky-400"></i> Alternar Minimapa</span>
+              </button>
+              <div class="my-1 border-t border-codex-border"></div>
+              <button data-action="reset-layout" class="w-full px-3.5 py-2 hover:bg-violet-600/20 hover:text-violet-200 flex items-center justify-between">
+                <span class="flex items-center gap-2.5"><i class="fa-solid fa-arrows-rotate w-4 text-amber-400"></i> Restablecer Diseño</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Active Project Badge & Dirty Indicator -->
+      <div class="flex items-center gap-1.5 bg-codex-surface/90 border border-codex-border px-2.5 py-1 rounded-lg">
+        <i class="fa-solid fa-cube text-violet-400 text-xs"></i>
+        <span id="currentProjectName" class="text-xs font-semibold text-slate-200 max-w-[110px] sm:max-w-[160px] truncate">Cyber Dashboard Demo</span>
+        <span id="unsavedIndicator" class="hidden w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="Cambios sin guardar"></span>
+        <button id="btnSwitchProject" class="text-slate-400 hover:text-white ml-1 text-[11px]" title="Cambiar o gestionar proyectos">
+          <i class="fa-solid fa-chevron-down"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Center: Execution Controls (EJECUTAR / ACTUALIZAR / DETENER / AUTO-RUN) -->
+    <div class="flex items-center gap-1.5">
+      <button id="btnRunCode" class="codex-btn-primary text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-md" title="Ejecutar Código (Ctrl+Enter)">
+        <i class="fa-solid fa-play text-[10px]"></i>
+        <span class="hidden sm:inline">EJECUTAR</span>
+      </button>
+
+      <button id="btnRefreshPreview" class="bg-codex-surface hover:bg-codex-hover text-slate-200 border border-codex-border text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition" title="Actualizar Vista Previa">
+        <i class="fa-solid fa-rotate text-violet-400 text-xs"></i>
+        <span class="hidden md:inline">ACTUALIZAR</span>
+      </button>
+
+      <button id="btnStopPreview" class="bg-codex-surface hover:bg-rose-950/60 hover:border-rose-500/40 text-slate-300 hover:text-rose-300 border border-codex-border text-xs font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition" title="Detener Ejecución">
+        <i class="fa-solid fa-stop text-rose-400 text-xs"></i>
+        <span class="hidden xl:inline">DETENER</span>
+      </button>
+
+      <!-- Auto-Run Toggle -->
+      <button id="btnToggleAutoRun" class="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-violet-500/40 bg-violet-500/10 text-violet-300 text-xs font-medium transition" title="Ejecución Automática en Tiempo Real">
+        <span id="autoRunDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span>Auto</span>
+      </button>
+    </div>
+
+    <!-- Right: Format, Save, Export, Settings -->
+    <div class="flex items-center gap-1.5">
+      <button id="btnFormatActive" class="bg-codex-surface hover:bg-codex-hover border border-codex-border text-slate-200 px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition" title="Formatear código con Prettier (Shift+Alt+F)">
+        <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+        <span class="hidden xl:inline">Formatear</span>
+      </button>
+
+      <button id="btnSaveProject" class="bg-codex-surface hover:bg-codex-hover border border-codex-border text-slate-200 px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition" title="Guardar en IndexedDB (Ctrl+S)">
+        <i class="fa-solid fa-floppy-disk text-sky-400"></i>
+        <span class="hidden xl:inline">Guardar</span>
+      </button>
+
+      <button id="btnExportZipQuick" class="bg-codex-surface hover:bg-codex-hover border border-codex-border text-slate-200 px-2.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition" title="Descargar Proyecto ZIP">
+        <i class="fa-solid fa-file-zipper text-purple-400"></i>
+        <span class="hidden sm:inline">ZIP</span>
+      </button>
+
+      <button id="btnResetLayoutTop" class="hidden md:flex w-8 h-8 rounded-lg bg-codex-surface hover:bg-codex-hover border border-codex-border items-center justify-center text-slate-300 hover:text-white transition" title="Restablecer Diseño de Paneles">
+        <i class="fa-solid fa-table-cells-large text-xs"></i>
+      </button>
+
+      <button id="btnOpenSettings" class="w-8 h-8 rounded-lg bg-codex-surface hover:bg-codex-hover border border-codex-border flex items-center justify-center text-slate-300 hover:text-violet-300 transition" title="Configuración del Editor">
+        <i class="fa-solid fa-gear text-xs"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- 2. MOBILE / TABLET NAVIGATION TABS (Visible on < lg screens)          -->
+  <!-- ===================================================================== -->
+  <div class="lg:hidden flex items-center bg-codex-panel border-b border-codex-border px-2 py-1 gap-1 shrink-0 z-20">
+    <button data-mobile-tab="files" class="mobile-nav-btn flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 text-slate-400 hover:text-white">
+      <i class="fa-solid fa-folder-tree"></i>
+      <span>Archivos</span>
+    </button>
+    <button data-mobile-tab="editor" class="mobile-nav-btn flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-violet-600/20 text-violet-300 border border-violet-500/30">
+      <i class="fa-solid fa-code"></i>
+      <span>Editor</span>
+    </button>
+    <button data-mobile-tab="preview" class="mobile-nav-btn flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 text-slate-400 hover:text-white">
+      <i class="fa-solid fa-display"></i>
+      <span>Vista Previa</span>
+    </button>
+    <button data-mobile-tab="console" class="mobile-nav-btn flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 text-slate-400 hover:text-white relative">
+      <i class="fa-solid fa-terminal"></i>
+      <span>Consola</span>
+      <span id="mobileConsoleBadge" class="hidden px-1.5 py-0.2 text-[10px] rounded-full bg-rose-500 text-white font-mono">0</span>
+    </button>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- 3. MAIN WORKSPACE CONTAINER                                           -->
+  <!-- ===================================================================== -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- 3.1 LEFT ACTIVITY BAR (Desktop) -->
+    <aside class="hidden lg:flex w-12 bg-codex-bg border-r border-codex-border flex-col items-center py-3 justify-between shrink-0 z-20">
+      <div class="flex flex-col items-center gap-2">
+        <button data-sidebar-view="explorer" class="activity-btn w-9 h-9 rounded-xl bg-violet-600/20 text-violet-400 border border-violet-500/40 flex items-center justify-center transition" title="Explorador de Archivos (Ctrl+B)">
+          <i class="fa-regular fa-copy text-sm"></i>
+        </button>
+        <button data-sidebar-view="search" class="activity-btn w-9 h-9 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-codex-surface flex items-center justify-center transition" title="Buscar en todos los archivos">
+          <i class="fa-solid fa-magnifying-glass text-sm"></i>
+        </button>
+        <button data-sidebar-view="export" class="activity-btn w-9 h-9 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-codex-surface flex items-center justify-center transition" title="Guardar, Exportar e Importar">
+          <i class="fa-solid fa-cloud-arrow-down text-sm"></i>
+        </button>
+      </div>
+
+      <div class="flex flex-col items-center gap-2">
+        <button id="btnActivityWelcome" class="w-9 h-9 rounded-xl text-slate-400 hover:text-violet-400 hover:bg-codex-surface flex items-center justify-center transition" title="Pantalla de Bienvenida">
+          <i class="fa-solid fa-rocket text-sm"></i>
+        </button>
+        <button id="btnActivitySettings" class="w-9 h-9 rounded-xl text-slate-400 hover:text-violet-400 hover:bg-codex-surface flex items-center justify-center transition" title="Configuración">
+          <i class="fa-solid fa-Sliders text-sm fa-sliders"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- 3.2 SIDEBAR PANEL (FILE EXPLORER / GLOBAL SEARCH / EXPORT HUB) -->
+    <aside id="sidebarPanel" class="w-64 bg-codex-panel border-r border-codex-border flex flex-col shrink-0 select-none z-20 max-lg:fixed max-lg:inset-y-12 max-lg:left-0 max-lg:w-72 max-lg:shadow-2xl max-lg:hidden">
+      
+      <!-- VIEW A: FILE EXPLORER -->
+      <div id="sidebarViewExplorer" class="flex-1 flex flex-col overflow-hidden">
+        <div class="h-9 px-3 border-b border-codex-border flex items-center justify-between">
+          <span class="text-[11px] font-bold tracking-wider uppercase text-slate-400">Explorador</span>
+          <div class="flex items-center gap-1">
+            <button id="btnSideNewFile" class="w-6 h-6 rounded hover:bg-codex-hover text-slate-300 hover:text-violet-400 flex items-center justify-center" title="Nuevo Archivo">
+              <i class="fa-solid fa-file-circle-plus text-xs"></i>
+            </button>
+            <button id="btnSideNewFolder" class="w-6 h-6 rounded hover:bg-codex-hover text-slate-300 hover:text-amber-400 flex items-center justify-center" title="Nueva Carpeta">
+              <i class="fa-solid fa-folder-plus text-xs"></i>
+            </button>
+            <button id="btnSideImport" class="w-6 h-6 rounded hover:bg-codex-hover text-slate-300 hover:text-emerald-400 flex items-center justify-center" title="Importar Archivos">
+              <i class="fa-solid fa-upload text-xs"></i>
+            </button>
+            <button id="btnSideCollapseMobile" class="lg:hidden w-6 h-6 rounded hover:bg-codex-hover text-slate-400 flex items-center justify-center" title="Cerrar">
+              <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Project Header Bar -->
+        <div class="px-3 py-2 bg-codex-surface/50 border-b border-codex-border flex items-center justify-between">
+          <div class="flex items-center gap-2 overflow-hidden">
+            <i class="fa-solid fa-folder-open text-violet-400 text-xs"></i>
+            <span id="explorerProjectTitle" class="text-xs font-bold text-slate-200 truncate">Cyber Dashboard Demo</span>
+          </div>
+          <button id="btnRenameProject" class="text-[11px] text-slate-400 hover:text-violet-300" title="Renombrar Proyecto">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+        </div>
+
+        <!-- File & Folder Tree List -->
+        <div id="fileTreeContainer" class="flex-1 overflow-y-auto py-1.5 px-1.5 space-y-0.5 text-xs">
+          <!-- Dynamically populated by JS -->
+        </div>
+
+        <!-- Quick Formatter & Storage Footer -->
+        <div class="p-2.5 border-t border-codex-border bg-codex-bg/50 space-y-1.5">
+          <div class="grid grid-cols-3 gap-1">
+            <button data-format-type="html" class="format-lang-btn py-1 px-1.5 rounded bg-codex-surface hover:bg-codex-hover border border-codex-border text-[10px] font-medium text-orange-300 flex items-center justify-center gap-1" title="Formatear HTML">
+              <i class="fa-brands fa-html5"></i> HTML
+            </button>
+            <button data-format-type="css" class="format-lang-btn py-1 px-1.5 rounded bg-codex-surface hover:bg-codex-hover border border-codex-border text-[10px] font-medium text-sky-300 flex items-center justify-center gap-1" title="Formatear CSS">
+              <i class="fa-brands fa-css3-alt"></i> CSS
+            </button>
+            <button data-format-type="js" class="format-lang-btn py-1 px-1.5 rounded bg-codex-surface hover:bg-codex-hover border border-codex-border text-[10px] font-medium text-amber-300 flex items-center justify-center gap-1" title="Formatear JS">
+              <i class="fa-brands fa-js"></i> JS
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW B: GLOBAL CODE SEARCH -->
+      <div id="sidebarViewSearch" class="hidden flex-1 flex flex-col overflow-hidden">
+        <div class="h-9 px-3 border-b border-codex-border flex items-center justify-between">
+          <span class="text-[11px] font-bold tracking-wider uppercase text-slate-400">Buscador de Código</span>
+        </div>
+        <div class="p-3 space-y-2 border-b border-codex-border">
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-xs text-slate-500"></i>
+            <input id="globalSearchInput" type="text" placeholder="Buscar texto en archivos..." class="w-full bg-codex-bg border border-codex-border focus:border-violet-500 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none" />
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-slate-400">
+            <span id="globalSearchCount">0 resultados</span>
+            <button id="btnTriggerEditorReplace" class="text-violet-400 hover:underline">Reemplazar en editor</button>
+          </div>
+        </div>
+        <div id="globalSearchResults" class="flex-1 overflow-y-auto p-2 space-y-1.5 text-xs">
+          <div class="text-center text-slate-500 py-8 text-xs">Escribe arriba para buscar en todos los archivos del proyecto.</div>
+        </div>
+      </div>
+
+      <!-- VIEW C: EXPORT & PERSISTENCE HUB -->
+      <div id="sidebarViewExport" class="hidden flex-1 flex flex-col overflow-y-auto">
+        <div class="h-9 px-3 border-b border-codex-border flex items-center justify-between">
+          <span class="text-[11px] font-bold tracking-wider uppercase text-slate-400">Guardar y Exportar</span>
+        </div>
+        <div class="p-3 space-y-2.5 text-xs">
+          <button data-action="save-project" class="w-full p-2.5 rounded-xl bg-codex-surface hover:bg-codex-hover border border-codex-border flex items-center gap-3 text-left transition">
+            <div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-floppy-disk"></i>
+            </div>
+            <div>
+              <div class="font-semibold text-slate-200">1. Guardar Proyecto</div>
+              <div class="text-[10px] text-slate-400">Conservar en IndexedDB</div>
+            </div>
+          </button>
+
+          <button data-action="save-as" class="w-full p-2.5 rounded-xl bg-codex-surface hover:bg-codex-hover border border-codex-border flex items-center gap-3 text-left transition">
+            <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-file-signature"></i>
+            </div>
+            <div>
+              <div class="font-semibold text-slate-200">2. Guardar Como...</div>
+              <div class="text-[10px] text-slate-400">Elegir nombre y formato</div>
+            </div>
+          </button>
+
+          <button data-action="download-html" class="w-full p-2.5 rounded-xl bg-codex-surface hover:bg-codex-hover border border-codex-border flex items-center gap-3 text-left transition">
+            <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0">
+              <i class="fa-brands fa-html5"></i>
+            </div>
+            <div>
+              <div class="font-semibold text-slate-200">3. Descargar HTML</div>
+              <div class="text-[10px] text-slate-400">HTML autónomo con CSS + JS</div>
+            </div>
+          </button>
+
+          <button data-action="download-project-files" class="w-full p-2.5 rounded-xl bg-codex-surface hover:bg-codex-hover border border-codex-border flex items-center gap-3 text-left transition">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <div>
+              <div class="font-semibold text-slate-200">4. Descargar Proyecto</div>
+              <div class="text-[10px] text-slate-400">Archivos independientes</div>
+            </div>
+          </button>
+
+          <button data-action="download-zip" class="w-full p-2.5 rounded-xl bg-codex-surface hover:bg-codex-hover border border-codex-border flex items-center gap-3 text-left transition">
+            <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-file-zipper"></i>
+            </div>
+            <div>
+              <div class="font-semibold text-slate-200">5. Descargar ZIP</div>
+              <div class="text-[10px] text-slate-400">Empaquetado completo JSZip</div>
+            </div>
+          </button>
+
+          <button data-action="import-files" class="w-full p-2.5 rounded-xl bg-codex-surface hover:bg-codex-hover border border-codex-border flex items-center gap-3 text-left transition">
+            <div class="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-file-import"></i>
+            </div>
+            <div>
+              <div class="font-semibold text-slate-200">6. Importar Proyecto</div>
+              <div class="text-[10px] text-slate-400">Cargar HTML, CSS, JS, SVG o ZIP</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Splitter 1: Sidebar <-> Center/Right Area -->
+    <div id="splitterSidebar" class="splitter-v hidden lg:block" title="Arrastrar para redimensionar explorador"></div>
+
+    <!-- 3.3 MAIN CENTER + RIGHT + BOTTOM CONSOLE AREA -->
+    <div class="flex-1 flex flex-col overflow-hidden bg-codex-bg">
+
+      <!-- TOP ROW: EDITOR (LEFT) + PREVIEW (RIGHT) -->
+      <div id="editorPreviewRow" class="flex-1 flex overflow-hidden relative">
+
+        <!-- =============================================================== -->
+        <!-- PANEL A: MONACO CODE EDITOR                                     -->
+        <!-- =============================================================== -->
+        <section id="editorSection" class="flex-1 flex flex-col min-w-[240px] overflow-hidden bg-[#0c0c12]">
+          
+          <!-- Editor Top Bar: Core HTML/CSS/JS Switchers + Open File Tabs + Editor Quick Tools -->
+          <div class="h-9 bg-codex-panel border-b border-codex-border flex items-center justify-between px-1.5 gap-2 shrink-0">
+            <!-- Core Language Pill Switchers (HTML / CSS / JS) -->
+            <div class="flex items-center gap-1 shrink-0 bg-codex-bg p-0.5 rounded-lg border border-codex-border">
+              <button data-quick-lang="html" class="quick-lang-tab px-2 py-1 rounded-md text-[11px] font-bold flex items-center gap-1 text-orange-400 bg-codex-surface transition" title="Ir al archivo HTML principal">
+                <i class="fa-brands fa-html5"></i>
+                <span>HTML</span>
+              </button>
+              <button data-quick-lang="css" class="quick-lang-tab px-2 py-1 rounded-md text-[11px] font-bold flex items-center gap-1 text-sky-400 hover:bg-codex-surface transition" title="Ir al archivo CSS principal">
+                <i class="fa-brands fa-css3-alt"></i>
+                <span>CSS</span>
+              </button>
+              <button data-quick-lang="js" class="quick-lang-tab px-2 py-1 rounded-md text-[11px] font-bold flex items-center gap-1 text-amber-400 hover:bg-codex-surface transition" title="Ir al archivo JavaScript principal">
+                <i class="fa-brands fa-js"></i>
+                <span>JS</span>
+              </button>
+            </div>
+
+            <!-- Open File Tabs Scrollbar -->
+            <div id="openTabsContainer" class="flex-1 flex items-center overflow-x-auto no-scrollbar h-full">
+              <!-- Populated dynamically -->
+            </div>
+
+            <!-- Editor Action Icons -->
+            <div class="flex items-center gap-1 shrink-0">
+              <button id="btnEditorSearch" class="w-7 h-7 rounded hover:bg-codex-hover text-slate-400 hover:text-white flex items-center justify-center text-xs" title="Buscar (Ctrl+F)">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </button>
+              <button id="btnEditorReplace" class="w-7 h-7 rounded hover:bg-codex-hover text-slate-400 hover:text-white flex items-center justify-center text-xs" title="Reemplazar (Ctrl+H)">
+                <i class="fa-solid fa-repeat"></i>
+              </button>
+              <button id="btnFontDecrease" class="w-7 h-7 rounded hover:bg-codex-hover text-slate-400 hover:text-white flex items-center justify-center text-xs" title="Reducir Fuente">
+                <i class="fa-solid fa-magnifying-glass-minus"></i>
+              </button>
+              <button id="btnFontIncrease" class="w-7 h-7 rounded hover:bg-codex-hover text-slate-400 hover:text-white flex items-center justify-center text-xs" title="Aumentar Fuente">
+                <i class="fa-solid fa-magnifying-glass-plus"></i>
+              </button>
+              <button id="btnToggleWordWrap" class="w-7 h-7 rounded hover:bg-codex-hover text-slate-400 hover:text-white flex items-center justify-center text-xs" title="Ajuste de línea (Word Wrap)">
+                <i class="fa-solid fa-align-left"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Breadcrumb & File Actions Subbar -->
+          <div class="h-6 bg-[#0e0e16] border-b border-codex-border/60 px-3 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+            <div class="flex items-center gap-1.5 truncate">
+              <span id="breadcrumbProject" class="text-slate-500">proyecto</span>
+              <i class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i>
+              <span id="breadcrumbFile" class="text-violet-300 font-mono">index.html</span>
+            </div>
+            <div class="flex items-center gap-3 text-[10px]">
+              <button id="btnCopyAllCode" class="hover:text-white flex items-center gap-1" title="Copiar contenido del archivo">
+                <i class="fa-regular fa-clipboard"></i> Copiar
+              </button>
+              <button id="btnDuplicateCurrentFile" class="hover:text-white flex items-center gap-1" title="Duplicar archivo actual">
+                <i class="fa-regular fa-clone"></i> Duplicar
+              </button>
+            </div>
+          </div>
+
+          <!-- Monaco Editor Mount Container -->
+          <div class="flex-1 relative w-full h-full overflow-hidden">
+            <div id="monacoContainer" class="w-full h-full"></div>
+
+            <!-- Fallback Editor (Only shown if CDN fails or while Monaco initializes) -->
+            <textarea id="fallbackEditor" spellcheck="false" class="hidden w-full h-full bg-[#0c0c12] text-slate-100 font-mono p-4 text-sm focus:outline-none resize-none leading-relaxed"></textarea>
+          </div>
+        </section>
+
+        <!-- Splitter 2: Editor <-> Preview -->
+        <div id="splitterEditorPreview" class="splitter-v hidden lg:block" title="Arrastrar para ajustar separación entre Editor y Vista Previa"></div>
+
+        <!-- =============================================================== -->
+        <!-- PANEL B: REAL-TIME ISOLATED PREVIEW                             -->
+        <!-- =============================================================== -->
+        <section id="previewSection" class="w-[46%] max-lg:w-full max-lg:hidden flex flex-col min-w-[240px] bg-codex-panel overflow-hidden">
+          
+          <!-- Preview Header Bar -->
+          <div class="h-9 bg-codex-panel border-b border-codex-border px-2.5 flex items-center justify-between gap-2 shrink-0">
+            <div class="flex items-center gap-2">
+              <span class="flex items-center gap-1.5 text-xs font-bold text-slate-200">
+                <span id="previewStatusDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span>VISTA PREVIA</span>
+              </span>
+              <span id="previewDimensionsBadge" class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-codex-surface text-slate-400 border border-codex-border">100%</span>
+            </div>
+
+            <!-- Device Mode Selector (Desktop / Tablet / Mobile) -->
+            <div class="flex items-center gap-1 bg-codex-bg p-0.5 rounded-lg border border-codex-border">
+              <button data-device="desktop" class="device-mode-btn px-2 py-1 rounded text-xs text-violet-300 bg-codex-surface" title="Modo Escritorio (100%)">
+                <i class="fa-solid fa-desktop"></i>
+              </button>
+              <button data-device="tablet" class="device-mode-btn px-2 py-1 rounded text-xs text-slate-400 hover:text-white" title="Modo Tablet (768x1024)">
+                <i class="fa-solid fa-tablet-screen-button"></i>
+              </button>
+              <button data-device="mobile" class="device-mode-btn px-2 py-1 rounded text-xs text-slate-400 hover:text-white" title="Modo Móvil (375x667)">
+                <i class="fa-solid fa-mobile-screen-button"></i>
+              </button>
+            </div>
+
+            <!-- Preview Right Controls -->
+            <div class="flex items-center gap-1">
+              <button id="btnOpenPreviewNewWindow" class="w-7 h-7 rounded hover:bg-codex-hover text-slate-400 hover:text-white flex items-center justify-center text-xs" title="Descargar HTML listo para navegador">
+                <i class="fa-solid fa-file-arrow-down"></i>
+              </button>
+              <button id="btnTogglePreviewFullscreen" class="w-7 h-7 rounded hover:bg-codex-hover text-slate-400 hover:text-white flex items-center justify-center text-xs" title="Pantalla Completa de Vista Previa">
+                <i class="fa-solid fa-expand"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Simulated Browser Address Bar -->
+          <div class="h-7 bg-codex-bg border-b border-codex-border px-2.5 flex items-center justify-between gap-2 text-[11px] shrink-0">
+            <div class="flex items-center gap-1.5 text-slate-500">
+              <i class="fa-solid fa-shield-halved text-emerald-400 text-[10px]"></i>
+              <span class="font-mono text-slate-400 truncate">sandbox://rafael-codex.studio/preview/index.html</span>
+            </div>
+            <span id="lastExecTimeBadge" class="text-[10px] font-mono text-slate-500">Listo</span>
+          </div>
+
+          <!-- Iframe Viewport Container -->
+          <div id="previewCanvasWrapper" class="flex-1 preview-canvas-bg flex items-center justify-center overflow-auto relative">
+            <iframe
+              id="previewIframe"
+              title="Vista Previa en Tiempo Real"
+              sandbox="allow-scripts allow-modals"
+              class="device-frame-desktop bg-white transition-all duration-200"
+            ></iframe>
+
+            <!-- Stopped Overlay -->
+            <div id="previewStoppedOverlay" class="hidden absolute inset-0 bg-codex-bg/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-10">
+              <div class="w-14 h-14 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 mb-3">
+                <i class="fa-solid fa-power-off text-2xl"></i>
+              </div>
+              <h4 class="text-sm font-bold text-white mb-1">Ejecución Detenida</h4>
+              <p class="text-xs text-slate-400 max-w-xs mb-4">El entorno aislado de vista previa se ha detenido manualmente.</p>
+              <button id="btnResumePreview" class="codex-btn-primary px-4 py-2 rounded-lg text-xs font-semibold text-white flex items-center gap-2">
+                <i class="fa-solid fa-play"></i> Reanudar Ejecución
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Splitter 3: Workspace <-> Bottom Developer Console -->
+      <div id="splitterConsole" class="splitter-h" title="Arrastrar para redimensionar la consola"></div>
+
+      <!-- ================================================================= -->
+      <!-- PANEL C: DEVELOPER CONSOLE                                        -->
+      <!-- ================================================================= -->
+      <section id="consoleSection" class="h-48 bg-codex-panel flex flex-col shrink-0 overflow-hidden">
+        <!-- Console Header -->
+        <div class="h-8 bg-codex-surface border-b border-codex-border px-3 flex items-center justify-between gap-2 shrink-0">
+          <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-200 mr-2">
+              <i class="fa-solid fa-terminal text-violet-400 text-[11px]"></i>
+              <span>CONSOLA</span>
+            </div>
+
+            <!-- Filter Pills -->
+            <button data-console-filter="all" class="console-filter-btn px-2 py-0.5 rounded text-[11px] font-semibold bg-violet-600/30 text-violet-200 border border-violet-500/40">
+              Todos <span id="badgeCountAll" class="ml-1 text-[10px] opacity-80">0</span>
+            </button>
+            <button data-console-filter="log" class="console-filter-btn px-2 py-0.5 rounded text-[11px] font-medium text-slate-400 hover:text-white">
+              Logs <span id="badgeCountLog" class="ml-1 text-[10px] opacity-75">0</span>
+            </button>
+            <button data-console-filter="warn" class="console-filter-btn px-2 py-0.5 rounded text-[11px] font-medium text-amber-400/80 hover:text-amber-300">
+              Avisos <span id="badgeCountWarn" class="ml-1 text-[10px] opacity-75">0</span>
+            </button>
+            <button data-console-filter="error" class="console-filter-btn px-2 py-0.5 rounded text-[11px] font-medium text-rose-400/80 hover:text-rose-300">
+              Errores <span id="badgeCountError" class="ml-1 text-[10px] opacity-75">0</span>
+            </button>
+            <button data-console-filter="system" class="console-filter-btn px-2 py-0.5 rounded text-[11px] font-medium text-purple-400/80 hover:text-purple-300">
+              Sistema
+            </button>
+          </div>
+
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button id="btnClearConsole" class="px-2 py-0.5 rounded bg-codex-bg hover:bg-codex-hover text-slate-300 border border-codex-border text-[11px] flex items-center gap-1 transition" title="Limpiar Consola">
+              <i class="fa-solid fa-ban text-[10px] text-rose-400"></i>
+              <span class="hidden sm:inline">Limpiar</span>
+            </button>
+            <button id="btnToggleConsoleMinimize" class="w-6 h-6 rounded bg-codex-bg hover:bg-codex-hover text-slate-300 border border-codex-border flex items-center justify-center text-xs transition" title="Ocultar / Mostrar Consola">
+              <i id="iconConsoleToggle" class="fa-solid fa-chevron-down text-[10px]"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Console Output Log Stream -->
+        <div id="consoleOutput" class="flex-1 overflow-y-auto p-2 font-mono text-xs space-y-1 bg-[#0a0a10] select-text">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Interactive Console REPL Input -->
+        <div class="h-7 bg-[#0d0d15] border-t border-codex-border px-2.5 flex items-center gap-2 shrink-0">
+          <i class="fa-solid fa-angle-right text-violet-400 text-xs font-bold"></i>
+          <input
+            id="consoleInput"
+            type="text"
+            placeholder="Evaluar expresión JavaScript en la vista previa (ej. document.title, 2 + 2) y pulsa Enter..."
+            class="flex-1 bg-transparent text-xs font-mono text-slate-200 focus:outline-none"
+          />
+          <button id="btnSendConsoleCmd" class="text-[10px] font-mono px-2 py-0.5 rounded bg-violet-600/20 text-violet-300 hover:bg-violet-600/40">
+            Ejecutar
+          </button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- 4. BOTTOM STATUS BAR                                                  -->
+  <!-- ===================================================================== -->
+  <footer class="h-6 bg-[#0d0d14] border-t border-codex-border px-3 flex items-center justify-between text-[11px] text-slate-400 shrink-0 z-30">
+    <div class="flex items-center gap-3 overflow-hidden">
+      <span class="flex items-center gap-1.5 text-violet-400 font-semibold">
+        <i class="fa-solid fa-bolt text-[10px]"></i>
+        <span class="hidden sm:inline">RAFAEL-CODEX ENGINE</span>
+      </span>
+      <span id="statusStorageState" class="flex items-center gap-1 text-emerald-400">
+        <i class="fa-solid fa-database text-[10px]"></i>
+        <span>IndexedDB Sincronizado</span>
+      </span>
+      <button id="btnStatusToggleConsole" class="hover:text-white flex items-center gap-1.5">
+        <i class="fa-solid fa-circle-xmark text-rose-400 text-[10px]"></i>
+        <span id="statusErrorCount">0</span>
+        <i class="fa-solid fa-triangle-exclamation text-amber-400 text-[10px] ml-1"></i>
+        <span id="statusWarnCount">0</span>
+      </button>
+    </div>
+
+    <div class="flex items-center gap-3 font-mono text-[10px]">
+      <span id="statusCursorPos">Lín 1, Col 1</span>
+      <span id="statusIndent" class="hidden sm:inline cursor-pointer hover:text-white" title="Cambiar sangría">Espacios: 2</span>
+      <span id="statusFontSize" class="hidden md:inline">14px</span>
+      <span id="statusLanguage" class="px-1.5 py-0.2 rounded bg-violet-500/20 text-violet-300 font-semibold uppercase">HTML</span>
+    </div>
+  </footer>
+
+  <!-- Hidden File Input for Importing Files / ZIP -->
+  <input id="hiddenFileInput" type="file" multiple accept=".html,.css,.js,.json,.txt,.svg,.zip" class="hidden" />
+
+  <!-- ===================================================================== -->
+  <!-- 5. MODALS (WELCOME, SETTINGS, SAVE AS, DIALOGS)                       -->
+  <!-- ===================================================================== -->
+
+  <!-- 5.1 WELCOME SCREEN MODAL -->
+  <div id="welcomeModal" class="fixed inset-0 z-50 glass-modal flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-3xl bg-codex-panel border border-violet-500/30 rounded-2xl shadow-2xl overflow-hidden codex-glow">
+      <!-- Top Hero Banner -->
+      <div class="relative p-6 sm:p-8 bg-gradient-to-br from-[#161229] via-[#111118] to-[#09090d] border-b border-codex-border">
+        <button id="btnCloseWelcome" class="absolute top-4 right-4 w-8 h-8 rounded-lg bg-codex-surface hover:bg-codex-hover text-slate-400 hover:text-white flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 flex items-center justify-center shadow-xl codex-glow shrink-0">
+            <i class="fa-solid fa-code text-white text-2xl"></i>
+          </div>
+          <div>
+            <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-violet-500/15 border border-violet-500/30 text-violet-300 text-[11px] font-semibold mb-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-ping"></span>
+              ONLINE CODE EDITOR PROFESIONAL
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight codex-gradient-text">RAFAEL-CODEX STUDIO</h1>
+            <p class="text-xs sm:text-sm text-slate-300 mt-1 italic">"Tu creatividad. Tu código. Tu espacio de desarrollo."</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Body Content -->
+      <div class="p-6 grid grid-cols-1 md:grid-cols-12 gap-6">
+        <!-- Primary Actions -->
+        <div class="md:col-span-5 space-y-2.5">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Comenzar</h3>
+
+          <button id="btnWelcomeNewProject" class="w-full p-3 rounded-xl codex-btn-primary text-white flex items-center gap-3 text-left shadow-lg">
+            <div class="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-folder-plus"></i>
+            </div>
+            <div>
+              <div class="text-xs font-bold">NUEVO PROYECTO</div>
+              <div class="text-[11px] text-violet-200">Crear estructura limpia desde cero</div>
+            </div>
+          </button>
+
+          <button id="btnWelcomeImportFiles" class="w-full p-3 rounded-xl bg-codex-surface hover:bg-codex-hover border border-codex-border text-slate-200 flex items-center gap-3 text-left transition">
+            <div class="w-9 h-9 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-file-import"></i>
+            </div>
+            <div>
+              <div class="text-xs font-bold">IMPORTAR ARCHIVOS</div>
+              <div class="text-[11px] text-slate-400">Cargar .html, .css, .js, .svg o .zip</div>
+            </div>
+          </button>
+
+          <button id="btnWelcomeLoadDemo" class="w-full p-3 rounded-xl bg-codex-surface hover:bg-codex-hover border border-codex-border text-slate-200 flex items-center gap-3 text-left transition">
+            <div class="w-9 h-9 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </div>
+            <div>
+              <div class="text-xs font-bold">PROYECTO DEMO INTERACTIVO</div>
+              <div class="text-[11px] text-slate-400">Restaurar plantilla de demostración</div>
+            </div>
+          </button>
+        </div>
+
+        <!-- Saved Projects in IndexedDB (ABRIR PROYECTO) -->
+        <div class="md:col-span-7 flex flex-col">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-database text-violet-400"></i>
+              <span>ABRIR PROYECTO (IndexedDB)</span>
+            </h3>
+            <span id="savedProjectsCountBadge" class="text-[11px] text-slate-500">1 proyecto</span>
+          </div>
+
+          <div id="welcomeProjectsList" class="flex-1 max-h-56 overflow-y-auto space-y-2 pr-1">
+            <!-- Populated dynamically from IndexedDB -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-3.5 bg-codex-bg border-t border-codex-border flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-4 text-slate-400">
+          <span><i class="fa-solid fa-check text-emerald-400 mr-1"></i>Monaco Editor</span>
+          <span><i class="fa-solid fa-check text-emerald-400 mr-1"></i>IndexedDB Persistente</span>
+          <span><i class="fa-solid fa-check text-emerald-400 mr-1"></i>Sandbox Iframe</span>
+        </div>
+        <button id="btnWelcomeContinue" class="px-4 py-1.5 rounded-lg bg-codex-surface hover:bg-codex-hover border border-codex-border text-slate-200 font-semibold">
+          Ir al Editor <i class="fa-solid fa-arrow-right ml-1"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5.2 SETTINGS MODAL -->
+  <div id="settingsModal" class="fixed inset-0 z-50 glass-modal flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-lg bg-codex-panel border border-codex-border rounded-2xl shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-codex-border flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <i class="fa-solid fa-sliders text-violet-400"></i>
+          <h3 class="text-sm font-bold text-white">Configuración de RAFAEL-CODEX STUDIO</h3>
+        </div>
+        <button id="btnCloseSettings" class="w-7 h-7 rounded-lg bg-codex-surface hover:bg-codex-hover text-slate-400 hover:text-white flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
+        <!-- Theme Selector -->
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <div class="font-semibold text-slate-200">Tema del Editor</div>
+            <div class="text-[11px] text-slate-400">Esquema de colores de sintaxis en Monaco Editor</div>
+          </div>
+          <select id="settingTheme" class="bg-codex-surface border border-codex-border rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-violet-500">
+            <option value="rafael-codex-dark">Rafael-Codex Dark (Violeta)</option>
+            <option value="vs-dark">Visual Studio Dark</option>
+            <option value="hc-black">Alto Contraste Negro</option>
+            <option value="vs">Visual Studio Claro</option>
+          </select>
+        </div>
+
+        <!-- Font Size -->
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <div class="font-semibold text-slate-200">Tamaño de Fuente (px)</div>
+            <div class="text-[11px] text-slate-400">Ajusta el tamaño del texto en el editor</div>
+          </div>
+          <input id="settingFontSize" type="number" min="10" max="28" value="14" class="w-20 bg-codex-surface border border-codex-border rounded-lg px-3 py-1.5 text-slate-200 text-center focus:outline-none focus:border-violet-500" />
+        </div>
+
+        <!-- Tab Size -->
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <div class="font-semibold text-slate-200">Espacios por Tabulación</div>
+            <div class="text-[11px] text-slate-400">Control de sangría y espacios</div>
+          </div>
+          <select id="settingTabSize" class="bg-codex-surface border border-codex-border rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-violet-500">
+            <option value="2">2 espacios</option>
+            <option value="4">4 espacios</option>
+          </select>
+        </div>
+
+        <!-- Word Wrap -->
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <div class="font-semibold text-slate-200">Ajuste Automático de Línea (Word Wrap)</div>
+            <div class="text-[11px] text-slate-400">Evita el desplazamiento horizontal largo</div>
+          </div>
+          <input id="settingWordWrap" type="checkbox" checked class="w-4 h-4 accent-violet-500 rounded cursor-pointer" />
+        </div>
+
+        <!-- Minimap -->
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <div class="font-semibold text-slate-200">Mostrar Minimapa de Código</div>
+            <div class="text-[11px] text-slate-400">Vista previa lateral del código en Monaco</div>
+          </div>
+          <input id="settingMinimap" type="checkbox" checked class="w-4 h-4 accent-violet-500 rounded cursor-pointer" />
+        </div>
+
+        <!-- Auto Preview -->
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <div class="font-semibold text-slate-200">Vista Previa en Tiempo Real (Auto-Run)</div>
+            <div class="text-[11px] text-slate-400">Actualiza automáticamente la vista previa al escribir</div>
+          </div>
+          <input id="settingAutoRun" type="checkbox" checked class="w-4 h-4 accent-violet-500 rounded cursor-pointer" />
+        </div>
+
+        <!-- Auto Save -->
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <div class="font-semibold text-slate-200">Guardado Automático en IndexedDB</div>
+            <div class="text-[11px] text-slate-400">Conserva todos los cambios al instante en el navegador</div>
+          </div>
+          <input id="settingAutoSave" type="checkbox" checked class="w-4 h-4 accent-violet-500 rounded cursor-pointer" />
+        </div>
+      </div>
+
+      <div class="px-5 py-3 bg-codex-bg border-t border-codex-border flex items-center justify-between">
+        <button id="btnResetLayoutFromSettings" class="px-3 py-1.5 rounded-lg bg-codex-surface hover:bg-codex-hover text-amber-300 text-xs font-medium">
+          <i class="fa-solid fa-arrows-rotate mr-1"></i> Restablecer Paneles
+        </button>
+        <button id="btnSaveSettingsDone" class="codex-btn-primary px-4 py-1.5 rounded-lg text-white text-xs font-semibold">
+          Listo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5.3 SAVE AS MODAL (GUARDAR COMO) -->
+  <div id="saveAsModal" class="fixed inset-0 z-50 glass-modal flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-md bg-codex-panel border border-codex-border rounded-2xl shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-codex-border flex items-center justify-between">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-file-signature text-violet-400"></i>
+          <span>Guardar Como / Exportar Archivo</span>
+        </h3>
+        <button id="btnCloseSaveAs" class="w-7 h-7 rounded-lg bg-codex-surface hover:bg-codex-hover text-slate-400 hover:text-white flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="p-5 space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1.5">Nombre del archivo:</label>
+          <input id="saveAsFilenameInput" type="text" value="mi-proyecto-codex" class="w-full bg-codex-bg border border-codex-border focus:border-violet-500 rounded-lg px-3 py-2 text-slate-100 font-mono focus:outline-none" />
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1.5">Formato de exportación:</label>
+          <select id="saveAsFormatSelect" class="w-full bg-codex-bg border border-codex-border focus:border-violet-500 rounded-lg px-3 py-2 text-slate-100 focus:outline-none">
+            <option value="standalone-html">Archivo HTML Autónomo (.html con CSS y JS integrados)</option>
+            <option value="zip">Paquete de Proyecto Completo (.zip)</option>
+            <option value="active-file">Archivo Activo Actual en el Editor</option>
+          </select>
+        </div>
+      </div>
+      <div class="px-5 py-3 bg-codex-bg border-t border-codex-border flex items-center justify-end gap-2">
+        <button id="btnCancelSaveAs" class="px-3.5 py-1.5 rounded-lg bg-codex-surface hover:bg-codex-hover text-slate-300 text-xs">Cancelar</button>
+        <button id="btnConfirmSaveAs" class="codex-btn-primary px-4 py-1.5 rounded-lg text-white text-xs font-semibold flex items-center gap-1.5">
+          <i class="fa-solid fa-download"></i> Descargar Ahora
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5.4 GENERIC PROMPT / CONFIRMATION MODAL (No window.prompt/alert/confirm) -->
+  <div id="dialogModal" class="fixed inset-0 z-50 glass-modal flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-md bg-codex-panel border border-codex-border rounded-2xl shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-codex-border flex items-center justify-between">
+        <h3 id="dialogTitle" class="text-sm font-bold text-white">Acción</h3>
+        <button id="btnCloseDialog" class="w-7 h-7 rounded-lg bg-codex-surface hover:bg-codex-hover text-slate-400 hover:text-white flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="p-5 space-y-3 text-xs">
+        <p id="dialogMessage" class="text-slate-300 leading-relaxed"></p>
+        <div id="dialogInputWrapper">
+          <input id="dialogInput" type="text" class="w-full bg-codex-bg border border-codex-border focus:border-violet-500 rounded-lg px-3 py-2 text-slate-100 font-mono focus:outline-none" />
+          <p id="dialogHint" class="text-[11px] text-slate-500 mt-1.5"></p>
+        </div>
+      </div>
+      <div class="px-5 py-3 bg-codex-bg border-t border-codex-border flex items-center justify-end gap-2">
+        <button id="btnDialogCancel" class="px-3.5 py-1.5 rounded-lg bg-codex-surface hover:bg-codex-hover text-slate-300 text-xs">Cancelar</button>
+        <button id="btnDialogConfirm" class="codex-btn-primary px-4 py-1.5 rounded-lg text-white text-xs font-semibold">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- 6. TOAST NOTIFICATIONS CONTAINER                                      -->
+  <!-- ===================================================================== -->
+  <div id="toastContainer" class="fixed bottom-9 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- ===================================================================== -->
+  <!-- 7. MONACO EDITOR LOADER & APPLICATION ARCHITECTURE                    -->
+  <!-- ===================================================================== -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* ===================================================================
+       * 1. DEFAULT INTERACTIVE DEMO PROJECT TEMPLATES
+       * =================================================================== */
+      const DEFAULT_PROJECT_FILES = {
+        'index.html': `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rafael-Codex Cyber Studio Demo</title>
+</head>
+<body>
+  <div class="cyber-shell">
+    <header class="hero-card">
+      <div class="badge-row">
+        <span class="pulse-dot"></span>
+        <span class="badge-text">RAFAEL-CODEX STUDIO • ENTORNO EN TIEMPO REAL</span>
+      </div>
+      <h1>Tu creatividad. Tu código. <span class="accent">Tu espacio de desarrollo.</span></h1>
+      <p class="subtitle">
+        Edita el código HTML, CSS o JavaScript a la izquierda y observa cómo esta aplicación interactiva se actualiza instantáneamente.
+      </p>
+
+      <div class="actions">
+        <button id="btnCounter" class="btn-primary">
+          ⚡ Impulso de Energía: <span id="energyValue">100</span>%
+        </button>
+        <button id="btnThemeShift" class="btn-secondary">
+          🎨 Alternar Aura Visual
+        </button>
+        <button id="btnTestConsole" class="btn-outline">
+          🖥️ Probar Consola JS
+        </button>
+      </div>
+    </header>
+
+    <section class="metrics-grid">
+      <article class="metric-card">
+        <span class="metric-label">MOTOR DE CÓDIGO</span>
+        <strong class="metric-val">Monaco IDE</strong>
+        <span class="metric-sub">Autocompletado + Sintaxis</span>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label">ALMACENAMIENTO</span>
+        <strong class="metric-val">IndexedDB</strong>
+        <span class="metric-sub">Persistencia Local Real</span>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label">RELOJ DEL SISTEMA</span>
+        <strong id="liveClock" class="metric-val">--:--:--</strong>
+        <span class="metric-sub">Sincronización Activa</span>
+      </article>
+    </section>
+
+    <section class="canvas-card">
+      <div class="canvas-header">
+        <span>Simulador de Partículas Cuánticas (Interactivo con el cursor)</span>
+        <span id="particleCounter" class="tag">36 nodos</span>
+      </div>
+      <canvas id="quantumCanvas" height="170"></canvas>
+    </section>
+  </div>
+</body>
+</html>`,
+
+        'styles.css': `/* ====================================================
+ * RAFAEL-CODEX STUDIO - Hoja de Estilos Principal
+ * ==================================================== */
+:root {
+  --bg-dark: #09090f;
+  --card-bg: rgba(22, 22, 34, 0.85);
+  --accent-main: #8b5cf6;
+  --accent-bright: #c084fc;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+}
+
+body.aura-emerald {
+  --accent-main: #10b981;
+  --accent-bright: #6ee7b7;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: radial-gradient(circle at top right, #1e1338 0%, var(--bg-dark) 65%);
+  color: var(--text-main);
+  min-height: 100vh;
+  padding: 24px;
+  transition: background 0.4s ease;
+}
+
+.cyber-shell {
+  max-width: 820px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.hero-card {
+  background: var(--card-bg);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+}
+
+.badge-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(139, 92, 246, 0.14);
+  border: 1px solid rgba(192, 132, 252, 0.3);
+  padding: 5px 12px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  box-shadow: 0 0 10px var(--accent-bright);
+}
+
+.badge-text {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent-bright);
+}
+
+h1 {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  line-height: 1.25;
+  margin-bottom: 10px;
+}
+
+.accent {
+  color: var(--accent-bright);
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+button {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.84rem;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-main), #6d28d9);
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.35);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: #232336;
+  color: #e2e8f0;
+  border: 1px solid #353552;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--accent-bright);
+  border: 1px solid var(--accent-main);
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.metric-card {
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+}
+
+.metric-val {
+  font-size: 1.25rem;
+  color: var(--accent-bright);
+}
+
+.metric-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.canvas-card {
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.canvas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.tag {
+  background: rgba(139, 92, 246, 0.2);
+  color: var(--accent-bright);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+canvas {
+  width: 100%;
+  height: 170px;
+  border-radius: 10px;
+  background: #07070c;
+  display: block;
+}`,
+
+        'app.js': `// ====================================================
+// RAFAEL-CODEX STUDIO - Lógica Interactiva de Demostración
+// ====================================================
+
+let energy = 100;
+const energyEl = document.getElementById('energyValue');
+const btnCounter = document.getElementById('btnCounter');
+const btnThemeShift = document.getElementById('btnThemeShift');
+const btnTestConsole = document.getElementById('btnTestConsole');
+const liveClock = document.getElementById('liveClock');
+
+console.log('🚀 [Rafael-Codex Demo] Aplicación iniciada correctamente.');
+
+// 1. Interacción de Energía
+if (btnCounter) {
+  btnCounter.addEventListener('click', () => {
+    energy += 25;
+    energyEl.textContent = energy;
+    console.log('⚡ Nivel de energía incrementado a: ' + energy + '%');
+  });
+}
+
+// 2. Cambio de tema dinámico
+if (btnThemeShift) {
+  btnThemeShift.addEventListener('click', () => {
+    document.body.classList.toggle('aura-emerald');
+    const modo = document.body.classList.contains('aura-emerald') ? 'Esmeralda' : 'Violeta';
+    console.info('🎨 Aura visual cambiada al modo: ' + modo);
+  });
+}
+
+// 3. Prueba de logs y advertencias en la consola inferior
+if (btnTestConsole) {
+  btnTestConsole.addEventListener('click', () => {
+    console.log('✅ Mensaje estándar console.log() enviado desde la vista previa.');
+    console.warn('⚠️ Aviso de prueba console.warn(): Rendimiento al 100%.');
+  });
+}
+
+// 4. Reloj en tiempo real
+function updateClock() {
+  if (liveClock) {
+    liveClock.textContent = new Date().toLocaleTimeString();
+  }
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// 5. Lienzo de partículas cuánticas
+const canvas = document.getElementById('quantumCanvas');
+if (canvas) {
+  const ctx = canvas.getContext('2d');
+  const resize = () => {
+    canvas.width = canvas.clientWidth;
+    canvas.height = 170;
+  };
+  resize();
+  window.addEventListener('resize', resize);
+
+  const nodes = Array.from({ length: 36 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    vx: (Math.random() - 0.5) * 1.4,
+    vy: (Math.random() - 0.5) * 1.4,
+    r: Math.random() * 2.2 + 1.2
+  }));
+
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      n.x += n.vx;
+      n.y += n.vy;
+      if (n.x < 0 || n.x > canvas.width) n.vx *= -1;
+      if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
+
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = '#c084fc';
+      ctx.fill();
+
+      for (let j = i + 1; j < nodes.length; j++) {
+        const m = nodes[j];
+        const dist = Math.hypot(n.x - m.x, n.y - m.y);
+        if (dist < 85) {
+          ctx.beginPath();
+          ctx.moveTo(n.x, n.y);
+          ctx.lineTo(m.x, m.y);
+          ctx.strokeStyle = 'rgba(139, 92, 246, ' + (1 - dist / 85) * 0.45 + ')';
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(render);
+  }
+  render();
+}`,
+
+        'config.json': `{
+  "studio": "RAFAEL-CODEX STUDIO",
+  "version": "1.0.0",
+  "engine": "Monaco Editor + IndexedDB",
+  "author": "Rafael-Codex Developer",
+  "features": [
+    "Real-Time Sandbox Preview",
+    "JSZip Export & Import",
+    "Prettier Code Formatter",
+    "IndexedDB Persistence"
+  ]
+}`,
+
+        'assets/logo.svg': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="codexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#c084fc" />
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="26" fill="#111118" stroke="url(#codexGrad)" stroke-width="4"/>
+  <path d="M44 42 L26 60 L44 78 M76 42 L94 60 L76 78 M66 36 L54 84" stroke="url(#codexGrad)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>`
+      };
+
+      /* ===================================================================
+       * 2. APPLICATION STATE
+       * =================================================================== */
+      const state = {
+        db: null,
+        currentProject: {
+          id: 'proj-default-codex',
+          name: 'Cyber Dashboard Demo',
+          updatedAt: Date.now(),
+          files: JSON.parse(JSON.stringify(DEFAULT_PROJECT_FILES)),
+          folders: ['assets'],
+          openTabs: ['index.html', 'styles.css', 'app.js'],
+          activeFile: 'index.html'
+        },
+        settings: {
+          theme: 'rafael-codex-dark',
+          fontSize: 14,
+          tabSize: 2,
+          wordWrap: true,
+          minimap: true,
+          autoRun: true,
+          autoSave: true
+        },
+        monacoLoaded: false,
+        editor: null,
+        models: {}, // filename -> monaco.editor.ITextModel
+        isDirty: false,
+        previewStopped: false,
+        deviceMode: 'desktop',
+        consoleLogs: [],
+        consoleFilter: 'all',
+        consoleMinimized: false,
+        autoRunTimer: null,
+        autoSaveTimer: null
+      };
+
+      const VALID_EXTENSIONS = ['.html', '.css', '.js', '.json', '.txt', '.svg'];
+
+      /* ===================================================================
+       * 3. REAL INDEXEDDB ENGINE (RafaelCodexStudioDB)
+       * =================================================================== */
+      const DB_NAME = 'RafaelCodexStudioDB';
+      const DB_VERSION = 1;
+
+      function initIndexedDB() {
+        return new Promise((resolve, reject) => {
+          if (!window.indexedDB) {
+            logSystem('IndexedDB no disponible en este navegador; usando memoria de sesión.', 'warn');
+            resolve(null);
+            return;
+          }
+          const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+          request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains('projects')) {
+              db.createObjectStore('projects', { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains('settings')) {
+              db.createObjectStore('settings', { keyPath: 'key' });
+            }
+          };
+
+          request.onsuccess = (event) => {
+            state.db = event.target.result;
+            resolve(state.db);
+          };
+
+          request.onerror = () => {
+            logSystem('Error al abrir IndexedDB.', 'error');
+            resolve(null);
+          };
+        });
+      }
+
+      function saveProjectToDB(showNotification = false) {
+        return new Promise((resolve) => {
+          syncActiveEditorContent();
+          state.currentProject.updatedAt = Date.now();
+
+          if (!state.db) {
+            setDirtyState(false);
+            resolve(false);
+            return;
+          }
+
+          try {
+            const tx = state.db.transaction(['projects', 'settings'], 'readwrite');
+            const store = tx.objectStore('projects');
+            const settingsStore = tx.objectStore('settings');
+
+            store.put(JSON.parse(JSON.stringify(state.currentProject)));
+            settingsStore.put({ key: 'lastActiveProjectId', value: state.currentProject.id });
+            settingsStore.put({ key: 'studioSettings', value: state.settings });
+
+            tx.oncomplete = () => {
+              setDirtyState(false);
+              updateStorageStatusUI('IndexedDB Sincronizado');
+              if (showNotification) {
+                showToast(`Proyecto "${state.currentProject.name}" guardado en IndexedDB`, 'success');
+                logSystem(`Proyecto "${state.currentProject.name}" guardado correctamente en IndexedDB.`);
+              }
+              resolve(true);
+            };
+
+            tx.onerror = () => {
+              updateStorageStatusUI('Error al guardar');
+              resolve(false);
+            };
+          } catch (err) {
+            resolve(false);
+          }
+        });
+      }
+
+      function getAllProjectsFromDB() {
+        return new Promise((resolve) => {
+          if (!state.db) {
+            resolve([state.currentProject]);
+            return;
+          }
+          try {
+            const tx = state.db.transaction(['projects'], 'readonly');
+            const store = tx.objectStore('projects');
+            const req = store.getAll();
+            req.onsuccess = () => {
+              const list = req.result || [];
+              list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+              resolve(list);
+            };
+            req.onerror = () => resolve([state.currentProject]);
+          } catch (e) {
+            resolve([state.currentProject]);
+          }
+        });
+      }
+
+      function loadInitialStateFromDB() {
+        return new Promise(async (resolve) => {
+          if (!state.db) {
+            resolve();
+            return;
+          }
+          try {
+            const tx = state.db.transaction(['projects', 'settings'], 'readonly');
+            const projStore = tx.objectStore('projects');
+            const setStore = tx.objectStore('settings');
+
+            const lastIdReq = setStore.get('lastActiveProjectId');
+            const settingsReq = setStore.get('studioSettings');
+            const allProjReq = projStore.getAll();
+
+            tx.oncomplete = async () => {
+              if (settingsReq.result && settingsReq.result.value) {
+                state.settings = Object.assign({}, state.settings, settingsReq.result.value);
+              }
+              const allProjects = allProjReq.result || [];
+              const lastId = lastIdReq.result ? lastIdReq.result.value : null;
+
+              if (allProjects.length > 0) {
+                const found = allProjects.find(p => p.id === lastId) || allProjects[0];
+                state.currentProject = found;
+                if (!state.currentProject.folders) state.currentProject.folders = [];
+                if (!state.currentProject.openTabs || state.currentProject.openTabs.length === 0) {
+                  state.currentProject.openTabs = Object.keys(state.currentProject.files).slice(0, 3);
+                }
+                if (!state.currentProject.activeFile || !state.currentProject.files[state.currentProject.activeFile]) {
+                  state.currentProject.activeFile = Object.keys(state.currentProject.files)[0];
+                }
+                logSystem(`Proyecto "${state.currentProject.name}" recuperado desde IndexedDB.`);
+              } else {
+                await saveProjectToDB(false);
+              }
+              resolve();
+            };
+          } catch (e) {
+            resolve();
+          }
+        });
+      }
+
+      function deleteProjectFromDB(projectId) {
+        return new Promise((resolve) => {
+          if (!state.db) return resolve(false);
+          const tx = state.db.transaction(['projects'], 'readwrite');
+          tx.objectStore('projects').delete(projectId);
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => resolve(false);
+        });
+      }
+
+      /* ===================================================================
+       * 4. MONACO EDITOR INITIALIZATION & MODELS
+       * =================================================================== */
+      function getMonacoLanguage(filename) {
+        const ext = getFileExtension(filename);
+        switch (ext) {
+          case '.html':
+          case '.svg':
+            return 'html';
+          case '.css':
+            return 'css';
+          case '.js':
+            return 'javascript';
+          case '.json':
+            return 'json';
+          default:
+            return 'plaintext';
+        }
+      }
+
+      function getFileExtension(filename) {
+        const idx = filename.lastIndexOf('.');
+        return idx !== -1 ? filename.slice(idx).toLowerCase() : '.txt';
+      }
+
+      function initMonacoEditor() {
+        return new Promise((resolve) => {
+          if (typeof window.require === 'undefined') {
+            enableFallbackEditor();
+            resolve();
+            return;
+          }
+
+          // Configure Cross-Origin Worker Proxy Blob for Monaco CDN
+          window.MonacoEnvironment = {
+            getWorkerUrl: function (workerId, label) {
+              return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+                self.MonacoEnvironment = {
+                  baseUrl: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/'
+                };
+                importScripts('https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/base/worker/workerMain.js');
+              `)}`;
+            }
+          };
+
+          window.require.config({
+            paths: {
+              vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs'
+            }
+          });
+
+          window.require(['vs/editor/editor.main'], function () {
+            state.monacoLoaded = true;
+
+            // Define Custom Theme: rafael-codex-dark
+            monaco.editor.defineTheme('rafael-codex-dark', {
+              base: 'vs-dark',
+              inherit: true,
+              rules: [
+                { token: 'comment', foreground: '6b7280', fontStyle: 'italic' },
+                { token: 'keyword', foreground: 'c084fc', fontStyle: 'bold' },
+                { token: 'tag', foreground: 'a855f7' },
+                { token: 'attribute.name', foreground: '38bdf8' },
+                { token: 'attribute.value', foreground: '34d399' },
+                { token: 'string', foreground: 'a7f3d0' },
+                { token: 'number', foreground: 'fbbf24' },
+                { token: 'type', foreground: '818cf8' }
+              ],
+              colors: {
+                'editor.background': '#0c0c12',
+                'editor.foreground': '#e2e8f0',
+                'editorCursor.foreground': '#a855f7',
+                'editor.lineHighlightBackground': '#171726',
+                'editorLineNumber.foreground': '#475569',
+                'editorLineNumber.activeForeground': '#c084fc',
+                'editor.selectionBackground': '#6d28d955',
+                'editor.inactiveSelectionBackground': '#3b076433',
+                'editorIndentGuide.background': '#1e1e2e',
+                'editorIndentGuide.activeBackground': '#8b5cf6'
+              }
+            });
+
+            rebuildAllMonacoModels();
+
+            const activeFile = state.currentProject.activeFile;
+            const initialModel = state.models[activeFile];
+
+            state.editor = monaco.editor.create(document.getElementById('monacoContainer'), {
+              model: initialModel,
+              theme: state.settings.theme || 'rafael-codex-dark',
+              fontSize: state.settings.fontSize || 14,
+              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+              fontLigatures: true,
+              tabSize: state.settings.tabSize || 2,
+              insertSpaces: true,
+              wordWrap: state.settings.wordWrap ? 'on' : 'off',
+              minimap: { enabled: state.settings.minimap },
+              automaticLayout: true,
+              autoClosingBrackets: 'always',
+              autoClosingQuotes: 'always',
+              autoIndent: 'full',
+              formatOnPaste: true,
+              matchBrackets: 'always',
+              folding: true,
+              smoothScrolling: true,
+              cursorBlinking: 'smooth',
+              cursorSmoothCaretAnimation: 'on',
+              renderWhitespace: 'selection',
+              bracketPairColorization: { enabled: true },
+              padding: { top: 12, bottom: 12 }
+            });
+
+            // Cursor position listener
+            state.editor.onDidChangeCursorPosition((e) => {
+              const posEl = document.getElementById('statusCursorPos');
+              if (posEl) {
+                posEl.textContent = `Lín ${e.position.lineNumber}, Col ${e.position.column}`;
+              }
+            });
+
+            // Keyboard Shortcuts inside Monaco
+            state.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+              saveProjectToDB(true);
+            });
+            state.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+              runPreview(true);
+            });
+            state.editor.addCommand(monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF, () => {
+              formatActiveFile();
+            });
+
+            logSystem('Motor Monaco Editor inicializado correctamente.');
+            resolve();
+          });
+        });
+      }
+
+      function enableFallbackEditor() {
+        const fallback = document.getElementById('fallbackEditor');
+        const monacoBox = document.getElementById('monacoContainer');
+        monacoBox.classList.add('hidden');
+        fallback.classList.remove('hidden');
+        fallback.value = state.currentProject.files[state.currentProject.activeFile] || '';
+        fallback.addEventListener('input', () => {
+          state.currentProject.files[state.currentProject.activeFile] = fallback.value;
+          onCodeContentChanged();
+        });
+      }
+
+      function rebuildAllMonacoModels() {
+        if (!state.monacoLoaded || typeof monaco === 'undefined') return;
+        // Dispose existing models
+        Object.values(state.models).forEach((m) => {
+          try { m.dispose(); } catch (e) {}
+        });
+        state.models = {};
+
+        Object.entries(state.currentProject.files).forEach(([filename, content]) => {
+          createOrUpdateMonacoModel(filename, content);
+        });
+      }
+
+      function createOrUpdateMonacoModel(filename, content) {
+        if (!state.monacoLoaded || typeof monaco === 'undefined') return null;
+        if (state.models[filename]) {
+          if (state.models[filename].getValue() !== content) {
+            state.models[filename].setValue(content);
+          }
+          return state.models[filename];
+        }
+        const uri = monaco.Uri.parse(`file:///${filename}`);
+        let existing = monaco.editor.getModel(uri);
+        if (existing) existing.dispose();
+
+        const lang = getMonacoLanguage(filename);
+        const model = monaco.editor.createModel(content, lang, uri);
+        model.updateOptions({ tabSize: Number(state.settings.tabSize) || 2, insertSpaces: true });
+
+        model.onDidChangeContent(() => {
+          state.currentProject.files[filename] = model.getValue();
+          onCodeContentChanged();
+        });
+
+        state.models[filename] = model;
+        return model;
+      }
+
+      function syncActiveEditorContent() {
+        const active = state.currentProject.activeFile;
+        if (!active) return;
+        if (state.monacoLoaded && state.models[active]) {
+          state.currentProject.files[active] = state.models[active].getValue();
+        } else {
+          const fallback = document.getElementById('fallbackEditor');
+          if (!fallback.classList.contains('hidden')) {
+            state.currentProject.files[active] = fallback.value;
+          }
+        }
+      }
+
+      function onCodeContentChanged() {
+        setDirtyState(true);
+
+        // Debounced Auto-Run Preview
+        if (state.settings.autoRun && !state.previewStopped) {
+          clearTimeout(state.autoRunTimer);
+          state.autoRunTimer = setTimeout(() => {
+            runPreview(false);
+          }, 500);
+        }
+
+        // Debounced Auto-Save in IndexedDB
+        if (state.settings.autoSave) {
+          updateStorageStatusUI('Guardando cambios...');
+          clearTimeout(state.autoSaveTimer);
+          state.autoSaveTimer = setTimeout(() => {
+            saveProjectToDB(false);
+          }, 900);
+        }
+      }
+
+      function setDirtyState(dirty) {
+        state.isDirty = dirty;
+        const dot = document.getElementById('unsavedIndicator');
+        if (dot) {
+          dot.classList.toggle('hidden', !dirty);
+        }
+        renderOpenTabs();
+      }
+
+      function updateStorageStatusUI(text) {
+        const el = document.getElementById('statusStorageState');
+        if (el) {
+          el.innerHTML = `<i class="fa-solid fa-database text-[10px]"></i><span>${text}</span>`;
+        }
+      }
+
+      /* ===================================================================
+       * 5. REAL-TIME SANDBOXED PREVIEW COMPILER & ENGINE
+       * =================================================================== */
+      function assembleProjectHTML(includeConsoleBridge = true) {
+        syncActiveEditorContent();
+        const files = state.currentProject.files;
+
+        // 1. Find primary HTML file (active if .html, else index.html, else first .html)
+        let htmlFile = 'index.html';
+        if (state.currentProject.activeFile && state.currentProject.activeFile.endsWith('.html')) {
+          htmlFile = state.currentProject.activeFile;
+        } else if (!files['index.html']) {
+          const firstHtml = Object.keys(files).find((f) => f.endsWith('.html'));
+          if (firstHtml) htmlFile = firstHtml;
+        }
+
+        let rawHtml = files[htmlFile] || '<!DOCTYPE html><html><head></head><body></body></html>';
+
+        // 2. Collect all CSS files in project
+        const cssContents = Object.keys(files)
+          .filter((f) => f.endsWith('.css'))
+          .map((f) => `/* === Archivo: ${f} === */\n${files[f]}`)
+          .join('\n\n');
+
+        // 3. Collect all JS files in project
+        const jsContents = Object.keys(files)
+          .filter((f) => f.endsWith('.js'))
+          .map((f) => `// === Archivo: ${f} ===\n${files[f]}`)
+          .join('\n\n');
+
+        // 4. Console & Error Bridge Script (Only injected for in-editor preview)
+        const bridgeScript = includeConsoleBridge ? `
+<script>
+(function() {
+  function serializeArg(arg) {
+    if (arg === undefined) return 'undefined';
+    if (arg === null) return 'null';
+    if (arg instanceof Error) return arg.name + ': ' + arg.message;
+    if (typeof arg === 'object') {
+      try { return JSON.stringify(arg, null, 2); } catch (e) { return String(arg); }
+    }
+    return String(arg);
+  }
+  function sendToStudio(level, args, meta) {
+    try {
+      window.parent.postMessage({
+        source: 'rafael-codex-preview',
+        level: level,
+        message: Array.prototype.slice.call(args).map(serializeArg).join(' '),
+        meta: meta || null,
+        timestamp: Date.now()
+      }, '*');
+    } catch (e) {}
+  }
+
+  const origLog = console.log;
+  const origWarn = console.warn;
+  const origError = console.error;
+  const origInfo = console.info;
+  const origClear = console.clear;
+
+  console.log = function() { sendToStudio('log', arguments); origLog.apply(console, arguments); };
+  console.info = function() { sendToStudio('info', arguments); origInfo.apply(console, arguments); };
+  console.warn = function() { sendToStudio('warn', arguments); origWarn.apply(console, arguments); };
+  console.error = function() { sendToStudio('error', arguments); origError.apply(console, arguments); };
+  console.clear = function() { sendToStudio('clear', []); origClear.apply(console, arguments); };
+
+  window.addEventListener('error', function(e) {
+    const loc = e.lineno ? ' (Línea ' + e.lineno + (e.colno ? ':' + e.colno : '') + ')' : '';
+    sendToStudio('error', ['Uncaught Error: ' + e.message + loc]);
+  });
+
+  window.addEventListener('unhandledrejection', function(e) {
+    sendToStudio('error', ['Unhandled Promise Rejection: ' + (e.reason ? (e.reason.message || e.reason) : 'Unknown')]);
+  });
+
+  // Listen for interactive console expressions from parent IDE
+  window.addEventListener('message', function(ev) {
+    if (ev.data && ev.data.source === 'rafael-codex-repl' && ev.data.code) {
+      try {
+        const fn = new Function('return (' + ev.data.code + ')');
+        const res = fn();
+        sendToStudio('log', ['← ' + serializeArg(res)]);
+      } catch (err1) {
+        try {
+          const fn2 = new Function(ev.data.code);
+          const res2 = fn2();
+          sendToStudio('log', ['← ' + serializeArg(res2)]);
+        } catch (err2) {
+          sendToStudio('error', [err2.name + ': ' + err2.message]);
+        }
+      }
+    }
+  });
+})();
+<\/script>` : '';
+
+        // Clean external self-references to project local CSS/JS files so they don't 404 inside srcdoc
+        let assembled = rawHtml;
+        Object.keys(files).forEach((filePath) => {
+          const baseName = filePath.split('/').pop();
+          if (filePath.endsWith('.css')) {
+            const linkRegex = new RegExp(`<link[^>]*href=["'](?:\\.?\\/)?(?:${filePath}|${baseName})["'][^>]*>`, 'gi');
+            assembled = assembled.replace(linkRegex, '');
+          } else if (filePath.endsWith('.js')) {
+            const scriptRegex = new RegExp(`<script[^>]*src=["'](?:\\.?\\/)?(?:${filePath}|${baseName})["'][^>]*>\\s*<\\/script>`, 'gi');
+            assembled = assembled.replace(scriptRegex, '');
+          }
+        });
+
+        const styleBlock = cssContents.trim() ? `\n<style id="rafael-codex-styles">\n${cssContents}\n</style>\n` : '';
+        const scriptBlock = jsContents.trim() ? `\n<script id="rafael-codex-scripts">\n${jsContents}\n<\/script>\n` : '';
+
+        if (/<\/head>/i.test(assembled)) {
+          assembled = assembled.replace(/<\/head>/i, `${bridgeScript}${styleBlock}</head>`);
+        } else {
+          assembled = `${bridgeScript}${styleBlock}${assembled}`;
+        }
+
+        if (/<\/body>/i.test(assembled)) {
+          assembled = assembled.replace(/<\/body>/i, `${scriptBlock}</body>`);
+        } else {
+          assembled = `${assembled}${scriptBlock}`;
+        }
+
+        return assembled;
+      }
+
+      function runPreview(manualTrigger = false) {
+        const startTime = performance.now();
+        state.previewStopped = false;
+
+        const overlay = document.getElementById('previewStoppedOverlay');
+        const dot = document.getElementById('previewStatusDot');
+        const iframe = document.getElementById('previewIframe');
+
+        if (overlay) overlay.classList.add('hidden');
+        if (dot) {
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        }
+
+        // If user is currently viewing an SVG file and manually runs, or standard HTML assembly
+        const compiledHTML = assembleProjectHTML(true);
+        iframe.srcdoc = compiledHTML;
+
+        const elapsed = Math.max(1, Math.round(performance.now() - startTime));
+        const badge = document.getElementById('lastExecTimeBadge');
+        if (badge) {
+          badge.textContent = `Compilado en ${elapsed}ms`;
+        }
+
+        if (manualTrigger) {
+          logSystem(`Código compilado y ejecutado en el sandbox (${elapsed}ms).`);
+        }
+      }
+
+      function stopPreview() {
+        state.previewStopped = true;
+        const iframe = document.getElementById('previewIframe');
+        const overlay = document.getElementById('previewStoppedOverlay');
+        const dot = document.getElementById('previewStatusDot');
+        const badge = document.getElementById('lastExecTimeBadge');
+
+        if (iframe) iframe.srcdoc = '<!DOCTYPE html><html><body style="background:#09090d;"></body></html>';
+        if (overlay) overlay.classList.remove('hidden');
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+        if (badge) badge.textContent = 'Detenido';
+
+        logSystem('Ejecución de la vista previa detenida por el usuario.', 'warn');
+        showToast('Vista previa detenida', 'info');
+      }
+
+      /* ===================================================================
+       * 6. DEVELOPER CONSOLE ENGINE
+       * =================================================================== */
+      window.addEventListener('message', (event) => {
+        if (!event.data || event.data.source !== 'rafael-codex-preview') return;
+        const { level, message } = event.data;
+        if (level === 'clear') {
+          clearConsole();
+          return;
+        }
+        appendConsoleEntry(level || 'log', message);
+      });
+
+      function logSystem(message, subType = 'system') {
+        appendConsoleEntry(subType === 'system' ? 'system' : subType, `[Sistema] ${message}`);
+      }
+
+      function appendConsoleEntry(level, message) {
+        const entry = {
+          id: Date.now() + '-' + Math.random(),
+          level,
+          message,
+          time: new Date().toLocaleTimeString()
+        };
+        state.consoleLogs.push(entry);
+        if (state.consoleLogs.length > 250) {
+          state.consoleLogs.shift();
+        }
+        renderConsoleLogs();
+        updateConsoleCounters();
+      }
+
+      function clearConsole() {
+        state.consoleLogs = [];
+        renderConsoleLogs();
+        updateConsoleCounters();
+      }
+
+      function updateConsoleCounters() {
+        const logs = state.consoleLogs.filter((l) => l.level === 'log' || l.level === 'info').length;
+        const warns = state.consoleLogs.filter((l) => l.level === 'warn').length;
+        const errors = state.consoleLogs.filter((l) => l.level === 'error').length;
+        const total = state.consoleLogs.length;
+
+        document.getElementById('badgeCountAll').textContent = total;
+        document.getElementById('badgeCountLog').textContent = logs;
+        document.getElementById('badgeCountWarn').textContent = warns;
+        document.getElementById('badgeCountError').textContent = errors;
+
+        document.getElementById('statusErrorCount').textContent = errors;
+        document.getElementById('statusWarnCount').textContent = warns;
+
+        const mobileBadge = document.getElementById('mobileConsoleBadge');
+        if (mobileBadge) {
+          if (errors > 0) {
+            mobileBadge.textContent = errors;
+            mobileBadge.classList.remove('hidden');
+          } else {
+            mobileBadge.classList.add('hidden');
+          }
+        }
+      }
+
+      function renderConsoleLogs() {
+        const container = document.getElementById('consoleOutput');
+        if (!container) return;
+
+        const filtered = state.consoleLogs.filter((item) => {
+          if (state.consoleFilter === 'all') return true;
+          if (state.consoleFilter === 'log') return item.level === 'log' || item.level === 'info';
+          return item.level === state.consoleFilter;
+        });
+
+        if (filtered.length === 0) {
+          container.innerHTML = `<div class="text-slate-600 text-[11px] py-3 px-2 italic">Sin mensajes en esta vista de la consola.</div>`;
+          return;
+        }
+
+        container.innerHTML = filtered
+          .map((item) => {
+            let styleClass = 'text-slate-300 border-l-2 border-slate-600 bg-slate-900/30';
+            let icon = 'fa-terminal text-slate-400';
+
+            if (item.level === 'info') {
+              styleClass = 'text-sky-300 border-l-2 border-sky-500 bg-sky-950/20';
+              icon = 'fa-circle-info text-sky-400';
+            } else if (item.level === 'warn') {
+              styleClass = 'text-amber-300 border-l-2 border-amber-500 bg-amber-950/25';
+              icon = 'fa-triangle-exclamation text-amber-400';
+            } else if (item.level === 'error') {
+              styleClass = 'text-rose-300 border-l-2 border-rose-500 bg-rose-950/30';
+              icon = 'fa-circle-xmark text-rose-400';
+            } else if (item.level === 'system') {
+              styleClass = 'text-purple-300 border-l-2 border-purple-500 bg-purple-950/20';
+              icon = 'fa-microchip text-purple-400';
+            }
+
+            return `
+              <div class="px-2.5 py-1 rounded-r flex items-start justify-between gap-2 ${styleClass}">
+                <div class="flex items-start gap-2 break-all whitespace-pre-wrap">
+                  <i class="fa-solid ${icon} mt-0.5 text-[11px] shrink-0"></i>
+                  <span>${escapeHTML(item.message)}</span>
+                </div>
+                <span class="text-[10px] text-slate-500 shrink-0 select-none">${item.time}</span>
+              </div>
+            `;
+          })
+          .join('');
+
+        container.scrollTop = container.scrollHeight;
+      }
+
+      function executeConsoleCommand() {
+        const input = document.getElementById('consoleInput');
+        const code = input.value.trim();
+        if (!code) return;
+        input.value = '';
+
+        appendConsoleEntry('log', `> ${code}`);
+        const iframe = document.getElementById('previewIframe');
+        if (iframe && iframe.contentWindow && !state.previewStopped) {
+          iframe.contentWindow.postMessage({
+            source: 'rafael-codex-repl',
+            code
+          }, '*');
+        } else {
+          appendConsoleEntry('error', 'La vista previa está detenida. Pulsa EJECUTAR para evaluar expresiones.');
+        }
+      }
+
+      /* ===================================================================
+       * 7. FILE & FOLDER EXPLORER + TABS MANAGEMENT
+       * =================================================================== */
+      function getFileIconHTML(filename) {
+        const ext = getFileExtension(filename);
+        switch (ext) {
+          case '.html':
+            return '<i class="fa-brands fa-html5 text-orange-400"></i>';
+          case '.css':
+            return '<i class="fa-brands fa-css3-alt text-sky-400"></i>';
+          case '.js':
+            return '<i class="fa-brands fa-js text-amber-400"></i>';
+          case '.json':
+            return '<i class="fa-solid fa-brackets-curly text-emerald-400">{}</i>';
+          case '.svg':
+            return '<i class="fa-solid fa-bezier-curve text-pink-400"></i>';
+          default:
+            return '<i class="fa-regular fa-file-lines text-slate-400"></i>';
+        }
+      }
+
+      function renderFileExplorer() {
+        const container = document.getElementById('fileTreeContainer');
+        const projTitle = document.getElementById('explorerProjectTitle');
+        const topName = document.getElementById('currentProjectName');
+
+        if (projTitle) projTitle.textContent = state.currentProject.name;
+        if (topName) topName.textContent = state.currentProject.name;
+        if (!container) return;
+
+        const files = Object.keys(state.currentProject.files).sort();
+        const folders = new Set(state.currentProject.folders || []);
+
+        // Also infer folders from file paths
+        files.forEach((f) => {
+          if (f.includes('/')) {
+            const parts = f.split('/');
+            parts.pop();
+            folders.add(parts.join('/'));
+          }
+        });
+
+        const sortedFolders = Array.from(folders).sort();
+        let html = '';
+
+        // Render folders and their files
+        sortedFolders.forEach((folder) => {
+          const folderFiles = files.filter((f) => f.startsWith(folder + '/'));
+          html += `
+            <div class="group rounded-lg">
+              <div class="flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-codex-surface text-slate-300">
+                <div class="flex items-center gap-2 truncate">
+                  <i class="fa-solid fa-folder text-amber-400/90 text-xs"></i>
+                  <span class="font-semibold truncate">${escapeHTML(folder)}/</span>
+                </div>
+                <div class="hidden group-hover:flex items-center gap-1">
+                  <button data-folder-newfile="${escapeHTML(folder)}" class="w-5 h-5 rounded hover:bg-codex-hover text-slate-400 hover:text-emerald-400 flex items-center justify-center" title="Nuevo archivo en carpeta">
+                    <i class="fa-solid fa-plus text-[10px]"></i>
+                  </button>
+                  <button data-folder-rename="${escapeHTML(folder)}" class="w-5 h-5 rounded hover:bg-codex-hover text-slate-400 hover:text-violet-400 flex items-center justify-center" title="Renombrar carpeta">
+                    <i class="fa-solid fa-pen text-[10px]"></i>
+                  </button>
+                  <button data-folder-delete="${escapeHTML(folder)}" class="w-5 h-5 rounded hover:bg-codex-hover text-slate-400 hover:text-rose-400 flex items-center justify-center" title="Eliminar carpeta">
+                    <i class="fa-solid fa-trash text-[10px]"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="pl-4 border-l border-codex-border/60 ml-2.5 space-y-0.5">
+                ${folderFiles.map((f) => renderSingleFileRow(f, f.slice(folder.length + 1))).join('')}
+              </div>
+            </div>
+          `;
+        });
+
+        // Render root files
+        const rootFiles = files.filter((f) => !f.includes('/'));
+        rootFiles.forEach((f) => {
+          html += renderSingleFileRow(f, f);
+        });
+
+        container.innerHTML = html;
+      }
+
+      function renderSingleFileRow(fullPath, displayName) {
+        const isActive = state.currentProject.activeFile === fullPath;
+        const activeClasses = isActive
+          ? 'bg-violet-600/20 text-white border border-violet-500/40 font-semibold'
+          : 'text-slate-300 hover:bg-codex-surface border border-transparent';
+
+        return `
+          <div class="group flex items-center justify-between px-2 py-1.5 rounded-lg cursor-pointer transition ${activeClasses}" data-open-file="${escapeHTML(fullPath)}">
+            <div class="flex items-center gap-2 truncate">
+              <span class="w-4 text-center shrink-0">${getFileIconHTML(fullPath)}</span>
+              <span class="truncate font-mono text-[11px]">${escapeHTML(displayName)}</span>
+            </div>
+            <div class="hidden group-hover:flex items-center gap-0.5 shrink-0">
+              <button data-file-duplicate="${escapeHTML(fullPath)}" class="w-5 h-5 rounded hover:bg-codex-hover text-slate-400 hover:text-sky-400 flex items-center justify-center" title="Duplicar">
+                <i class="fa-regular fa-clone text-[10px]"></i>
+              </button>
+              <button data-file-rename="${escapeHTML(fullPath)}" class="w-5 h-5 rounded hover:bg-codex-hover text-slate-400 hover:text-violet-300 flex items-center justify-center" title="Renombrar">
+                <i class="fa-solid fa-pen text-[10px]"></i>
+              </button>
+              <button data-file-delete="${escapeHTML(fullPath)}" class="w-5 h-5 rounded hover:bg-codex-hover text-slate-400 hover:text-rose-400 flex items-center justify-center" title="Eliminar">
+                <i class="fa-solid fa-trash text-[10px]"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderOpenTabs() {
+        const container = document.getElementById('openTabsContainer');
+        if (!container) return;
+
+        // Clean tabs that no longer exist
+        state.currentProject.openTabs = state.currentProject.openTabs.filter(
+          (f) => state.currentProject.files.hasOwnProperty(f)
+        );
+
+        container.innerHTML = state.currentProject.openTabs
+          .map((filePath) => {
+            const isActive = state.currentProject.activeFile === filePath;
+            const shortName = filePath.split('/').pop();
+            return `
+              <div
+                data-tab-file="${escapeHTML(filePath)}"
+                class="editor-tab h-full px-3 flex items-center gap-2 border-r border-codex-border cursor-pointer shrink-0 text-xs font-mono ${isActive ? 'active' : 'text-slate-400 hover:bg-codex-surface hover:text-slate-200'}"
+                title="${escapeHTML(filePath)}"
+              >
+                <span>${getFileIconHTML(filePath)}</span>
+                <span>${escapeHTML(shortName)}</span>
+                ${isActive && state.isDirty ? '<span class="w-1.5 h-1.5 rounded-full bg-violet-400"></span>' : ''}
+                <button data-close-tab="${escapeHTML(filePath)}" class="w-4 h-4 rounded hover:bg-codex-hover text-slate-500 hover:text-rose-400 flex items-center justify-center ml-1" title="Cerrar pestaña">
+                  <i class="fa-solid fa-xmark text-[10px]"></i>
+                </button>
+              </div>
+            `;
+          })
+          .join('');
+
+        // Update Quick HTML / CSS / JS Pill highlight
+        const activeExt = getFileExtension(state.currentProject.activeFile || '');
+        document.querySelectorAll('.quick-lang-tab').forEach((btn) => {
+          const lang = btn.getAttribute('data-quick-lang');
+          const match = (lang === 'html' && activeExt === '.html') ||
+                        (lang === 'css' && activeExt === '.css') ||
+                        (lang === 'js' && activeExt === '.js');
+          btn.classList.toggle('bg-violet-600/25', match);
+          btn.classList.toggle('border', match);
+          btn.classList.toggle('border-violet-500/40', match);
+        });
+      }
+
+      function switchToFile(filePath) {
+        if (!state.currentProject.files.hasOwnProperty(filePath)) return;
+        syncActiveEditorContent();
+
+        state.currentProject.activeFile = filePath;
+        if (!state.currentProject.openTabs.includes(filePath)) {
+          state.currentProject.openTabs.push(filePath);
+        }
+
+        if (state.monacoLoaded && state.editor) {
+          const model = createOrUpdateMonacoModel(filePath, state.currentProject.files[filePath]);
+          state.editor.setModel(model);
+          state.editor.focus();
+        } else {
+          const fallback = document.getElementById('fallbackEditor');
+          fallback.value = state.currentProject.files[filePath] || '';
+        }
+
+        // Update Breadcrumbs & Status Bar
+        document.getElementById('breadcrumbProject').textContent = state.currentProject.name;
+        document.getElementById('breadcrumbFile').textContent = filePath;
+        document.getElementById('statusLanguage').textContent = getFileExtension(filePath).replace('.', '').toUpperCase();
+
+        renderFileExplorer();
+        renderOpenTabs();
+      }
+
+      function closeTab(filePath) {
+        const idx = state.currentProject.openTabs.indexOf(filePath);
+        if (idx === -1) return;
+
+        if (state.currentProject.openTabs.length === 1) {
+          showToast('Debe permanecer al menos un archivo abierto en el editor.', 'info');
+          return;
+        }
+
+        state.currentProject.openTabs.splice(idx, 1);
+        if (state.currentProject.activeFile === filePath) {
+          const nextFile = state.currentProject.openTabs[Math.max(0, idx - 1)];
+          switchToFile(nextFile);
+        } else {
+          renderOpenTabs();
+        }
+      }
+
+      /* ===================================================================
+       * 8. FILE & FOLDER CRUD OPERATIONS
+       * =================================================================== */
+      function promptCreateFile(prefixFolder = '') {
+        const defaultName = prefixFolder ? `${prefixFolder}/nuevo.js` : 'nuevo.js';
+        openDialog({
+          title: 'Crear Nuevo Archivo',
+          message: 'Ingresa el nombre del archivo con su extensión (.html, .css, .js, .json, .txt, .svg):',
+          inputValue: defaultName,
+          hint: 'Puedes incluir ruta de carpeta, ej: css/animaciones.css',
+          confirmText: 'Crear Archivo',
+          onConfirm: (rawName) => {
+            const name = sanitizeFilePath(rawName);
+            if (!name) return;
+            const ext = getFileExtension(name);
+            if (!VALID_EXTENSIONS.includes(ext)) {
+              showToast(`Extensión no compatible (${ext}). Usa: ${VALID_EXTENSIONS.join(', ')}`, 'error');
+              return;
+            }
+            if (state.currentProject.files.hasOwnProperty(name)) {
+              showToast('Ya existe un archivo con ese nombre.', 'error');
+              return;
+            }
+
+            let starter = '';
+            if (ext === '.html') starter = '<!DOCTYPE html>\n<html lang="es">\n<head>\n  <meta charset="UTF-8">\n  <title>Documento</title>\n</head>\n<body>\n  <h1>Nuevo Documento HTML</h1>\n</body>\n</html>';
+            if (ext === '.css') starter = '/* Estilos para ' + name + ' */\nbody {\n  \n}\n';
+            if (ext === '.js') starter = '// Script: ' + name + '\nconsole.log("Archivo ' + name + ' cargado");\n';
+            if (ext === '.json') starter = '{\n  "name": "' + name + '"\n}\n';
+            if (ext === '.svg') starter = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">\n  <circle cx="50" cy="50" r="40" fill="#8b5cf6" />\n</svg>';
+
+            state.currentProject.files[name] = starter;
+            createOrUpdateMonacoModel(name, starter);
+            switchToFile(name);
+            saveProjectToDB(false);
+            runPreview(false);
+            showToast(`Archivo "${name}" creado`, 'success');
+            logSystem(`Nuevo archivo creado: ${name}`);
+          }
+        });
+      }
+
+      function promptCreateFolder() {
+        openDialog({
+          title: 'Crear Nueva Carpeta',
+          message: 'Ingresa el nombre de la nueva carpeta:',
+          inputValue: 'components',
+          hint: 'Ejemplo: components, js, css, assets',
+          confirmText: 'Crear Carpeta',
+          onConfirm: (rawFolder) => {
+            const folder = sanitizeFilePath(rawFolder).replace(/^\/+|\/+$/g, '');
+            if (!folder) return;
+            if (!state.currentProject.folders) state.currentProject.folders = [];
+            if (!state.currentProject.folders.includes(folder)) {
+              state.currentProject.folders.push(folder);
+            }
+            renderFileExplorer();
+            saveProjectToDB(false);
+            showToast(`Carpeta "${folder}/" creada`, 'success');
+            logSystem(`Nueva carpeta creada: ${folder}/`);
+          }
+        });
+      }
+
+      function promptRenameFile(oldPath) {
+        openDialog({
+          title: 'Renombrar Archivo',
+          message: `Nuevo nombre para "${oldPath}":`,
+          inputValue: oldPath,
+          hint: 'Extensiones válidas: .html, .css, .js, .json, .txt, .svg',
+          confirmText: 'Renombrar',
+          onConfirm: (rawNewPath) => {
+            const newPath = sanitizeFilePath(rawNewPath);
+            if (!newPath || newPath === oldPath) return;
+            const ext = getFileExtension(newPath);
+            if (!VALID_EXTENSIONS.includes(ext)) {
+              showToast(`Extensión no permitida. Usa: ${VALID_EXTENSIONS.join(', ')}`, 'error');
+              return;
+            }
+            if (state.currentProject.files.hasOwnProperty(newPath)) {
+              showToast('Ya existe un archivo con ese nombre.', 'error');
+              return;
+            }
+
+            syncActiveEditorContent();
+            const content = state.currentProject.files[oldPath];
+            delete state.currentProject.files[oldPath];
+            state.currentProject.files[newPath] = content;
+
+            if (state.models[oldPath]) {
+              state.models[oldPath].dispose();
+              delete state.models[oldPath];
+            }
+            createOrUpdateMonacoModel(newPath, content);
+
+            state.currentProject.openTabs = state.currentProject.openTabs.map((t) => (t === oldPath ? newPath : t));
+            if (state.currentProject.activeFile === oldPath) {
+              state.currentProject.activeFile = newPath;
+            }
+
+            switchToFile(state.currentProject.activeFile);
+            saveProjectToDB(false);
+            runPreview(false);
+            showToast(`Archivo renombrado a "${newPath}"`, 'success');
+          }
+        });
+      }
+
+      function duplicateFile(filePath) {
+        syncActiveEditorContent();
+        const ext = getFileExtension(filePath);
+        const base = filePath.slice(0, filePath.length - ext.length);
+        let candidate = `${base}-copia${ext}`;
+        let count = 2;
+        while (state.currentProject.files.hasOwnProperty(candidate)) {
+          candidate = `${base}-copia-${count}${ext}`;
+          count++;
+        }
+
+        const content = state.currentProject.files[filePath];
+        state.currentProject.files[candidate] = content;
+        createOrUpdateMonacoModel(candidate, content);
+        switchToFile(candidate);
+        saveProjectToDB(false);
+        showToast(`Archivo duplicado: "${candidate}"`, 'success');
+        logSystem(`Archivo duplicado: ${filePath} -> ${candidate}`);
+      }
+
+      function promptDeleteFile(filePath) {
+        if (Object.keys(state.currentProject.files).length <= 1) {
+          showToast('El proyecto debe tener al menos un archivo.', 'error');
+          return;
+        }
+        openDialog({
+          title: 'Eliminar Archivo',
+          message: `¿Estás seguro de que deseas eliminar permanentemente "${filePath}"?`,
+          showInput: false,
+          confirmText: 'Eliminar',
+          danger: true,
+          onConfirm: () => {
+            delete state.currentProject.files[filePath];
+            if (state.models[filePath]) {
+              state.models[filePath].dispose();
+              delete state.models[filePath];
+            }
+            state.currentProject.openTabs = state.currentProject.openTabs.filter((t) => t !== filePath);
+            if (state.currentProject.activeFile === filePath) {
+              const remaining = Object.keys(state.currentProject.files);
+              const next = state.currentProject.openTabs[0] || remaining[0];
+              switchToFile(next);
+            } else {
+              renderFileExplorer();
+              renderOpenTabs();
+            }
+            saveProjectToDB(false);
+            runPreview(false);
+            showToast(`Archivo "${filePath}" eliminado`, 'info');
+            logSystem(`Archivo eliminado: ${filePath}`, 'warn');
+          }
+        });
+      }
+
+      function promptRenameFolder(oldFolder) {
+        openDialog({
+          title: 'Renombrar Carpeta',
+          message: `Nuevo nombre para la carpeta "${oldFolder}/":`,
+          inputValue: oldFolder,
+          confirmText: 'Renombrar',
+          onConfirm: (rawNew) => {
+            const newFolder = sanitizeFilePath(rawNew).replace(/^\/+|\/+$/g, '');
+            if (!newFolder || newFolder === oldFolder) return;
+
+            syncActiveEditorContent();
+            state.currentProject.folders = (state.currentProject.folders || []).map((f) =>
+              f === oldFolder ? newFolder : f
+            );
+
+            Object.keys(state.currentProject.files).forEach((filePath) => {
+              if (filePath.startsWith(oldFolder + '/')) {
+                const updatedPath = newFolder + filePath.slice(oldFolder.length);
+                state.currentProject.files[updatedPath] = state.currentProject.files[filePath];
+                delete state.currentProject.files[filePath];
+                if (state.models[filePath]) {
+                  state.models[filePath].dispose();
+                  delete state.models[filePath];
+                }
+                createOrUpdateMonacoModel(updatedPath, state.currentProject.files[updatedPath]);
+                state.currentProject.openTabs = state.currentProject.openTabs.map((t) =>
+                  t === filePath ? updatedPath : t
+                );
+                if (state.currentProject.activeFile === filePath) {
+                  state.currentProject.activeFile = updatedPath;
+                }
+              }
+            });
+
+            switchToFile(state.currentProject.activeFile);
+            saveProjectToDB(false);
+            showToast(`Carpeta renombrada a "${newFolder}/"`, 'success');
+          }
+        });
+      }
+
+      function promptDeleteFolder(folder) {
+        openDialog({
+          title: 'Eliminar Carpeta',
+          message: `¿Deseas eliminar la carpeta "${folder}/" y todos los archivos dentro de ella?`,
+          showInput: false,
+          confirmText: 'Eliminar Carpeta',
+          danger: true,
+          onConfirm: () => {
+            state.currentProject.folders = (state.currentProject.folders || []).filter((f) => f !== folder);
+            const allFiles = Object.keys(state.currentProject.files);
+            const toDelete = allFiles.filter((f) => f.startsWith(folder + '/'));
+
+            if (allFiles.length - toDelete.length < 1) {
+              showToast('No puedes eliminar todos los archivos del proyecto.', 'error');
+              return;
+            }
+
+            toDelete.forEach((f) => {
+              delete state.currentProject.files[f];
+              if (state.models[f]) {
+                state.models[f].dispose();
+                delete state.models[f];
+              }
+              state.currentProject.openTabs = state.currentProject.openTabs.filter((t) => t !== f);
+            });
+
+            if (!state.currentProject.files[state.currentProject.activeFile]) {
+              const firstRemaining = Object.keys(state.currentProject.files)[0];
+              switchToFile(firstRemaining);
+            } else {
+              renderFileExplorer();
+              renderOpenTabs();
+            }
+            saveProjectToDB(false);
+            showToast(`Carpeta "${folder}/" eliminada`, 'info');
+          }
+        });
+      }
+
+      /* ===================================================================
+       * 9. PROJECT MANAGEMENT (NEW, OPEN, RENAME, DELETE)
+       * =================================================================== */
+      function promptCreateNewProject() {
+        openDialog({
+          title: 'Nuevo Proyecto',
+          message: 'Nombre para el nuevo proyecto:',
+          inputValue: 'Mi Proyecto Web',
+          hint: 'Se creará con archivos index.html, styles.css y app.js listos para programar.',
+          confirmText: 'Crear Proyecto',
+          onConfirm: async (rawName) => {
+            const name = (rawName || 'Nuevo Proyecto').trim();
+            await saveProjectToDB(false);
+
+            const newProj = {
+              id: 'proj-' + Date.now(),
+              name,
+              updatedAt: Date.now(),
+              folders: [],
+              files: {
+                'index.html': `<!DOCTYPE html>\n<html lang="es">\n<head>\n  <meta charset="UTF-8" />\n  <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n  <title>${name}</title>\n</head>\n<body>\n  <main class="container">\n    <h1>🚀 ${name}</h1>\n    <p>Proyecto creado en <strong>RAFAEL-CODEX STUDIO</strong>.</p>\n    <button id="btnAction">Probar Interacción</button>\n  </main>\n</body>\n</html>`,
+                'styles.css': `body {\n  font-family: system-ui, sans-serif;\n  background: #0f0f17;\n  color: #f8fafc;\n  display: grid;\n  place-items: center;\n  min-height: 100vh;\n  margin: 0;\n}\n\n.container {\n  text-align: center;\n  padding: 2rem;\n  background: #181826;\n  border: 1px solid #2e2e48;\n  border-radius: 16px;\n}\n\nbutton {\n  margin-top: 1rem;\n  padding: 0.65rem 1.25rem;\n  border-radius: 10px;\n  border: none;\n  background: #8b5cf6;\n  color: white;\n  font-weight: 600;\n  cursor: pointer;\n}`,
+                'app.js': `console.log("Proyecto '${name}' iniciado.");\n\ndocument.getElementById('btnAction')?.addEventListener('click', () => {\n  console.log("¡Botón pulsado con éxito!");\n});`
+              },
+              openTabs: ['index.html', 'styles.css', 'app.js'],
+              activeFile: 'index.html'
+            };
+
+            loadProjectIntoWorkspace(newProj);
+            await saveProjectToDB(true);
+            closeWelcomeModal();
+          }
+        });
+      }
+
+      function loadProjectIntoWorkspace(projectObj) {
+        state.currentProject = JSON.parse(JSON.stringify(projectObj));
+        if (!state.currentProject.folders) state.currentProject.folders = [];
+        if (!state.currentProject.openTabs || state.currentProject.openTabs.length === 0) {
+          state.currentProject.openTabs = Object.keys(state.currentProject.files).slice(0, 3);
+        }
+        if (!state.currentProject.activeFile || !state.currentProject.files[state.currentProject.activeFile]) {
+          state.currentProject.activeFile = Object.keys(state.currentProject.files)[0];
+        }
+
+        rebuildAllMonacoModels();
+        switchToFile(state.currentProject.activeFile);
+        clearConsole();
+        runPreview(true);
+      }
+
+      /* ===================================================================
+       * 10. REAL EXPORT, DOWNLOAD & IMPORT FUNCTIONS
+       * =================================================================== */
+      function triggerBlobDownload(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      }
+
+      // 1. DESCARGAR HTML (Standalone self-contained HTML file)
+      function downloadStandaloneHTML(customName) {
+        const compiled = assembleProjectHTML(false);
+        const slug = customName || slugify(state.currentProject.name) || 'index';
+        const filename = slug.endsWith('.html') ? slug : `${slug}.html`;
+        const blob = new Blob([compiled], { type: 'text/html;charset=utf-8' });
+        triggerBlobDownload(blob, filename);
+        showToast(`HTML autónomo "${filename}" descargado`, 'success');
+        logSystem(`Archivo HTML autónomo exportado: ${filename}`);
+      }
+
+      // 2. DESCARGAR PROYECTO (Exports HTML, CSS, JS, etc. as independent files)
+      function downloadIndependentProjectFiles() {
+        syncActiveEditorContent();
+        const entries = Object.entries(state.currentProject.files);
+        entries.forEach(([filePath, content], idx) => {
+          setTimeout(() => {
+            const flatName = filePath.replace(/\//g, '_');
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            triggerBlobDownload(blob, flatName);
+          }, idx * 180);
+        });
+        showToast(`Descargando ${entries.length} archivos independientes del proyecto`, 'success');
+        logSystem(`Exportación de ${entries.length} archivos independientes iniciada.`);
+      }
+
+      // 3. DESCARGAR ZIP (Real JSZip packaging of all files & folders)
+      async function downloadProjectZIP(customZipName) {
+        syncActiveEditorContent();
+        if (typeof JSZip === 'undefined') {
+          showToast('Biblioteca JSZip no disponible. Descargando archivos individuales.', 'error');
+          downloadIndependentProjectFiles();
+          return;
+        }
+
+        try {
+          const zip = new JSZip();
+          (state.currentProject.folders || []).forEach((folder) => {
+            zip.folder(folder);
+          });
+          Object.entries(state.currentProject.files).forEach(([filePath, content]) => {
+            zip.file(filePath, content);
+          });
+          // Also include a standalone bundle inside the zip for convenience
+          zip.file('bundle-standalone.html', assembleProjectHTML(false));
+
+          const blob = await zip.generateAsync({ type: 'blob' });
+          const baseName = customZipName || slugify(state.currentProject.name) || 'rafael-codex-project';
+          const zipFilename = baseName.endsWith('.zip') ? baseName : `${baseName}.zip`;
+          triggerBlobDownload(blob, zipFilename);
+
+          showToast(`Paquete ZIP "${zipFilename}" descargado correctamente`, 'success');
+          logSystem(`Proyecto empaquetado y descargado como ${zipFilename}.`);
+        } catch (err) {
+          showToast('Error al generar el archivo ZIP', 'error');
+          logSystem(`Error en exportación ZIP: ${err.message}`, 'error');
+        }
+      }
+
+      // 4. IMPORTAR ARCHIVOS O PAQUETE ZIP DESDE EL ORDENADOR
+      async function handleImportedFiles(fileList) {
+        if (!fileList || fileList.length === 0) return;
+        let importedCount = 0;
+
+        for (const file of Array.from(fileList)) {
+          const lower = file.name.toLowerCase();
+
+          // If it's a .zip archive, extract with JSZip
+          if (lower.endsWith('.zip') && typeof JSZip !== 'undefined') {
+            try {
+              const zip = await JSZip.loadAsync(file);
+              const entries = Object.keys(zip.files);
+              for (const entryName of entries) {
+                const zipEntry = zip.files[entryName];
+                if (zipEntry.dir) continue;
+                const cleanPath = sanitizeFilePath(entryName);
+                const ext = getFileExtension(cleanPath);
+                if (VALID_EXTENSIONS.includes(ext)) {
+                  const text = await zipEntry.async('string');
+                  state.currentProject.files[cleanPath] = text;
+                  createOrUpdateMonacoModel(cleanPath, text);
+                  importedCount++;
+                }
+              }
+            } catch (err) {
+              showToast(`No se pudo descomprimir ${file.name}`, 'error');
+            }
+            continue;
+          }
+
+          // Validate regular file extension
+          const ext = getFileExtension(lower);
+          if (!VALID_EXTENSIONS.includes(ext)) {
+            showToast(`Archivo omitido (${file.name}): extensión no soportada.`, 'error');
+            continue;
+          }
+
+          const content = await readFileAsText(file);
+          const cleanName = sanitizeFilePath(file.name);
+          state.currentProject.files[cleanName] = content;
+          createOrUpdateMonacoModel(cleanName, content);
+          if (!state.currentProject.openTabs.includes(cleanName)) {
+            state.currentProject.openTabs.push(cleanName);
+          }
+          state.currentProject.activeFile = cleanName;
+          importedCount++;
+        }
+
+        if (importedCount > 0) {
+          switchToFile(state.currentProject.activeFile);
+          await saveProjectToDB(false);
+          runPreview(true);
+          closeWelcomeModal();
+          showToast(`${importedCount} archivo(s) importado(s) al proyecto`, 'success');
+          logSystem(`Se importaron ${importedCount} archivo(s) desde el dispositivo.`);
+        }
+      }
+
+      function readFileAsText(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(String(e.target.result || ''));
+          reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
+          reader.readAsText(file);
+        });
+      }
+
+      /* ===================================================================
+       * 11. PRETTIER CODE FORMATTER (HTML, CSS, JS, JSON)
+       * =================================================================== */
+      function formatCodeString(code, filename) {
+        const ext = getFileExtension(filename);
+        const tabWidth = Number(state.settings.tabSize) || 2;
+
+        if (typeof prettier !== 'undefined' && typeof prettierPlugins !== 'undefined') {
+          try {
+            if (ext === '.html' || ext === '.svg') {
+              return prettier.format(code, {
+                parser: 'html',
+                plugins: prettierPlugins,
+                tabWidth,
+                printWidth: 100
+              });
+            }
+            if (ext === '.css') {
+              return prettier.format(code, {
+                parser: 'css',
+                plugins: prettierPlugins,
+                tabWidth
+              });
+            }
+            if (ext === '.js') {
+              return prettier.format(code, {
+                parser: 'babel',
+                plugins: prettierPlugins,
+                tabWidth,
+                semi: true,
+                singleQuote: true
+              });
+            }
+            if (ext === '.json') {
+              return JSON.stringify(JSON.parse(code), null, tabWidth);
+            }
+          } catch (err) {
+            logSystem(`Aviso de sintaxis al formatear ${filename}: ${err.message}`, 'warn');
+            throw err;
+          }
+        }
+
+        // Fallback basic formatter
+        if (ext === '.json') {
+          return JSON.stringify(JSON.parse(code), null, tabWidth);
+        }
+        return code;
+      }
+
+      function formatActiveFile() {
+        syncActiveEditorContent();
+        const active = state.currentProject.activeFile;
+        if (!active) return;
+
+        try {
+          const formatted = formatCodeString(state.currentProject.files[active], active);
+          state.currentProject.files[active] = formatted;
+          if (state.monacoLoaded && state.models[active]) {
+            state.models[active].setValue(formatted);
+          } else {
+            document.getElementById('fallbackEditor').value = formatted;
+          }
+          showToast(`Código de "${active}" formateado`, 'success');
+          logSystem(`Archivo ${active} formateado con Prettier.`);
+        } catch (err) {
+          showToast(`Error de sintaxis en "${active}". Revisa la consola.`, 'error');
+        }
+      }
+
+      function formatSpecificLanguage(type) {
+        syncActiveEditorContent();
+        const extTarget = '.' + type.toLowerCase();
+        const matchingFiles = Object.keys(state.currentProject.files).filter((f) => f.endsWith(extTarget));
+
+        if (matchingFiles.length === 0) {
+          showToast(`No hay archivos ${extTarget} en el proyecto`, 'info');
+          return;
+        }
+
+        let count = 0;
+        matchingFiles.forEach((file) => {
+          try {
+            const formatted = formatCodeString(state.currentProject.files[file], file);
+            state.currentProject.files[file] = formatted;
+            if (state.models[file]) state.models[file].setValue(formatted);
+            count++;
+          } catch (e) {}
+        });
+
+        if (count > 0) {
+          showToast(`Formateado(s) ${count} archivo(s) ${extTarget.toUpperCase()}`, 'success');
+        }
+      }
+
+      function formatAllProjectFiles() {
+        syncActiveEditorContent();
+        let count = 0;
+        Object.keys(state.currentProject.files).forEach((file) => {
+          try {
+            const formatted = formatCodeString(state.currentProject.files[file], file);
+            state.currentProject.files[file] = formatted;
+            if (state.models[file]) state.models[file].setValue(formatted);
+            count++;
+          } catch (e) {}
+        });
+        showToast(`${count} archivos del proyecto formateados`, 'success');
+        logSystem(`Formateo global completado (${count} archivos).`);
+      }
+
+      /* ===================================================================
+       * 12. GLOBAL PROJECT SEARCH
+       * =================================================================== */
+      function performGlobalSearch(query) {
+        const resultsEl = document.getElementById('globalSearchResults');
+        const countEl = document.getElementById('globalSearchCount');
+        const q = (query || '').trim().toLowerCase();
+
+        if (!q) {
+          countEl.textContent = '0 resultados';
+          resultsEl.innerHTML = `<div class="text-center text-slate-500 py-8 text-xs">Escribe arriba para buscar en todos los archivos del proyecto.</div>`;
+          return;
+        }
+
+        syncActiveEditorContent();
+        const matches = [];
+
+        Object.entries(state.currentProject.files).forEach(([filePath, content]) => {
+          const lines = content.split('\n');
+          lines.forEach((lineText, idx) => {
+            if (lineText.toLowerCase().includes(q)) {
+              matches.push({
+                file: filePath,
+                line: idx + 1,
+                preview: lineText.trim().slice(0, 90)
+              });
+            }
+          });
+        });
+
+        countEl.textContent = `${matches.length} resultado(s)`;
+        if (matches.length === 0) {
+          resultsEl.innerHTML = `<div class="text-center text-slate-500 py-8 text-xs">No se encontraron coincidencias para "${escapeHTML(query)}".</div>`;
+          return;
+        }
+
+        resultsEl.innerHTML = matches
+          .map(
+            (m) => `
+            <button data-search-jump="${escapeHTML(m.file)}" data-search-line="${m.line}" class="w-full text-left p-2 rounded-lg bg-codex-surface/60 hover:bg-violet-600/20 border border-codex-border transition block">
+              <div class="flex items-center justify-between text-[11px] font-semibold text-violet-300 mb-0.5">
+                <span class="truncate">${escapeHTML(m.file)}</span>
+                <span class="font-mono text-[10px] text-slate-400">Lín ${m.line}</span>
+              </div>
+              <div class="font-mono text-[10px] text-slate-300 truncate">${escapeHTML(m.preview)}</div>
+            </button>
+          `
+          )
+          .join('');
+      }
+
+      /* ===================================================================
+       * 13. DRAGGABLE SPLITTERS & LAYOUT RESET
+       * =================================================================== */
+      function initSplitters() {
+        const sidebar = document.getElementById('sidebarPanel');
+        const splitterSidebar = document.getElementById('splitterSidebar');
+        const previewSection = document.getElementById('previewSection');
+        const editorPreviewRow = document.getElementById('editorPreviewRow');
+        const splitterEditorPreview = document.getElementById('splitterEditorPreview');
+        const consoleSection = document.getElementById('consoleSection');
+        const splitterConsole = document.getElementById('splitterConsole');
+
+        // 1. Sidebar Splitter
+        let draggingSidebar = false;
+        splitterSidebar.addEventListener('mousedown', () => {
+          draggingSidebar = true;
+          splitterSidebar.classList.add('dragging');
+          document.body.classList.add('is-resizing');
+        });
+
+        // 2. Editor <-> Preview Splitter
+        let draggingPreview = false;
+        splitterEditorPreview.addEventListener('mousedown', () => {
+          draggingPreview = true;
+          splitterEditorPreview.classList.add('dragging');
+          document.body.classList.add('is-resizing');
+        });
+
+        // 3. Console Splitter
+        let draggingConsole = false;
+        splitterConsole.addEventListener('mousedown', () => {
+          draggingConsole = true;
+          splitterConsole.classList.add('dragging');
+          document.body.classList.add('is-resizing');
+        });
+
+        window.addEventListener('mousemove', (e) => {
+          if (draggingSidebar) {
+            const newWidth = Math.min(460, Math.max(170, e.clientX - 48));
+            sidebar.style.width = `${newWidth}px`;
+            if (state.editor) state.editor.layout();
+          } else if (draggingPreview) {
+            const rect = editorPreviewRow.getBoundingClientRect();
+            const rightWidth = rect.right - e.clientX;
+            const clamped = Math.min(rect.width - 260, Math.max(240, rightWidth));
+            previewSection.style.width = `${clamped}px`;
+            if (state.editor) state.editor.layout();
+          } else if (draggingConsole) {
+            const totalBottom = window.innerHeight - 24;
+            const newHeight = Math.min(window.innerHeight * 0.65, Math.max(32, totalBottom - e.clientY));
+            consoleSection.style.height = `${newHeight}px`;
+            state.consoleMinimized = newHeight <= 40;
+            if (state.editor) state.editor.layout();
+          }
+        });
+
+        window.addEventListener('mouseup', () => {
+          if (draggingSidebar || draggingPreview || draggingConsole) {
+            draggingSidebar = false;
+            draggingPreview = false;
+            draggingConsole = false;
+            splitterSidebar.classList.remove('dragging');
+            splitterEditorPreview.classList.remove('dragging');
+            splitterConsole.classList.remove('dragging');
+            document.body.classList.remove('is-resizing');
+            if (state.editor) state.editor.layout();
+          }
+        });
+      }
+
+      function resetWorkspaceLayout() {
+        const sidebar = document.getElementById('sidebarPanel');
+        const previewSection = document.getElementById('previewSection');
+        const consoleSection = document.getElementById('consoleSection');
+
+        sidebar.classList.remove('hidden');
+        sidebar.style.width = '16rem';
+        previewSection.style.width = '46%';
+        consoleSection.style.height = '12rem';
+        state.consoleMinimized = false;
+
+        setDeviceViewportMode('desktop');
+        if (state.editor) state.editor.layout();
+        showToast('Diseño de paneles restablecido', 'info');
+      }
+
+      function setDeviceViewportMode(mode) {
+        state.deviceMode = mode;
+        const iframe = document.getElementById('previewIframe');
+        const badge = document.getElementById('previewDimensionsBadge');
+
+        iframe.classList.remove('device-frame-desktop', 'device-frame-tablet', 'device-frame-mobile');
+        if (mode === 'tablet') {
+          iframe.classList.add('device-frame-tablet');
+          badge.textContent = '768 × 1024';
+        } else if (mode === 'mobile') {
+          iframe.classList.add('device-frame-mobile');
+          badge.textContent = '375 × 667';
+        } else {
+          iframe.classList.add('device-frame-desktop');
+          badge.textContent = '100%';
+        }
+
+        document.querySelectorAll('.device-mode-btn').forEach((btn) => {
+          const active = btn.getAttribute('data-device') === mode;
+          btn.classList.toggle('bg-codex-surface', active);
+          btn.classList.toggle('text-violet-300', active);
+          btn.classList.toggle('text-slate-400', !active);
+        });
+      }
+
+      /* ===================================================================
+       * 14. MODALS, DIALOGS & TOAST NOTIFICATIONS
+       * =================================================================== */
+      function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        let border = 'border-violet-500/50';
+        let icon = 'fa-circle-info text-violet-400';
+
+        if (type === 'success') {
+          border = 'border-emerald-500/50';
+          icon = 'fa-circle-check text-emerald-400';
+        } else if (type === 'error') {
+          border = 'border-rose-500/50';
+          icon = 'fa-triangle-exclamation text-rose-400';
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `pointer-events-auto bg-codex-panel/95 backdrop-blur-md border ${border} rounded-xl px-3.5 py-2.5 shadow-2xl flex items-center gap-2.5 text-xs text-slate-100 transition-all duration-300`;
+        toast.innerHTML = `
+          <i class="fa-solid ${icon} text-sm shrink-0"></i>
+          <span class="flex-1 font-medium">${escapeHTML(message)}</span>
+        `;
+
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(8px)';
+          setTimeout(() => toast.remove(), 250);
+        }, 3200);
+      }
+
+      let activeDialogCallback = null;
+      function openDialog({ title, message, inputValue = '', hint = '', showInput = true, confirmText = 'Confirmar', danger = false, onConfirm }) {
+        const modal = document.getElementById('dialogModal');
+        const titleEl = document.getElementById('dialogTitle');
+        const msgEl = document.getElementById('dialogMessage');
+        const inputWrap = document.getElementById('dialogInputWrapper');
+        const inputEl = document.getElementById('dialogInput');
+        const hintEl = document.getElementById('dialogHint');
+        const confirmBtn = document.getElementById('btnDialogConfirm');
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        inputWrap.classList.toggle('hidden', !showInput);
+        inputEl.value = inputValue;
+        hintEl.textContent = hint;
+        confirmBtn.textContent = confirmText;
+
+        if (danger) {
+          confirmBtn.className = 'bg-rose-600 hover:bg-rose-500 px-4 py-1.5 rounded-lg text-white text-xs font-semibold transition';
+        } else {
+          confirmBtn.className = 'codex-btn-primary px-4 py-1.5 rounded-lg text-white text-xs font-semibold';
+        }
+
+        activeDialogCallback = () => {
+          const val = inputEl.value;
+          closeDialog();
+          if (onConfirm) onConfirm(val);
+        };
+
+        modal.classList.remove('hidden');
+        if (showInput) {
+          setTimeout(() => {
+            inputEl.focus();
+            inputEl.select();
+          }, 50);
+        }
+      }
+
+      function closeDialog() {
+        document.getElementById('dialogModal').classList.add('hidden');
+        activeDialogCallback = null;
+      }
+
+      async function openWelcomeModal() {
+        const modal = document.getElementById('welcomeModal');
+        modal.classList.remove('hidden');
+        await renderWelcomeProjectsList();
+      }
+
+      function closeWelcomeModal() {
+        document.getElementById('welcomeModal').classList.add('hidden');
+      }
+
+      async function renderWelcomeProjectsList() {
+        const listEl = document.getElementById('welcomeProjectsList');
+        const countBadge = document.getElementById('savedProjectsCountBadge');
+        const projects = await getAllProjectsFromDB();
+
+        countBadge.textContent = `${projects.length} proyecto(s)`;
+        listEl.innerHTML = projects
+          .map((proj) => {
+            const isCurrent = proj.id === state.currentProject.id;
+            const fileCount = Object.keys(proj.files || {}).length;
+            const dateStr = new Date(proj.updatedAt || Date.now()).toLocaleString();
+
+            return `
+              <div class="p-3 rounded-xl bg-codex-surface/80 hover:bg-codex-hover border ${isCurrent ? 'border-violet-500/60' : 'border-codex-border'} flex items-center justify-between gap-2 transition">
+                <div class="min-w-0 flex-1 cursor-pointer" data-load-project="${escapeHTML(proj.id)}">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-white truncate">${escapeHTML(proj.name)}</span>
+                    ${isCurrent ? '<span class="text-[10px] px-1.5 py-0.2 rounded bg-violet-500/20 text-violet-300 border border-violet-500/30">Activo</span>' : ''}
+                  </div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">${fileCount} archivos • Actualizado: ${escapeHTML(dateStr)}</div>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                  <button data-load-project="${escapeHTML(proj.id)}" class="px-2.5 py-1 rounded-lg bg-violet-600/20 hover:bg-violet-600 text-violet-200 hover:text-white text-xs font-semibold transition">
+                    Abrir
+                  </button>
+                  ${projects.length > 1 ? `
+                    <button data-delete-project="${escapeHTML(proj.id)}" class="w-7 h-7 rounded-lg hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 flex items-center justify-center transition" title="Eliminar Proyecto">
+                      <i class="fa-solid fa-trash text-xs"></i>
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+          })
+          .join('');
+      }
+
+      /* ===================================================================
+       * 15. SETTINGS APPLICATION
+       * =================================================================== */
+      function applySettingsToEditor() {
+        document.getElementById('settingTheme').value = state.settings.theme;
+        document.getElementById('settingFontSize').value = state.settings.fontSize;
+        document.getElementById('settingTabSize').value = String(state.settings.tabSize);
+        document.getElementById('settingWordWrap').checked = !!state.settings.wordWrap;
+        document.getElementById('settingMinimap').checked = !!state.settings.minimap;
+        document.getElementById('settingAutoRun').checked = !!state.settings.autoRun;
+        document.getElementById('settingAutoSave').checked = !!state.settings.autoSave;
+
+        document.getElementById('statusFontSize').textContent = `${state.settings.fontSize}px`;
+        document.getElementById('statusIndent').textContent = `Espacios: ${state.settings.tabSize}`;
+
+        const autoDot = document.getElementById('autoRunDot');
+        if (autoDot) {
+          autoDot.className = `w-2 h-2 rounded-full ${state.settings.autoRun ? 'bg-emerald-400' : 'bg-slate-500'}`;
+        }
+
+        if (state.monacoLoaded && state.editor) {
+          monaco.editor.setTheme(state.settings.theme);
+          state.editor.updateOptions({
+            fontSize: Number(state.settings.fontSize),
+            wordWrap: state.settings.wordWrap ? 'on' : 'off',
+            minimap: { enabled: !!state.settings.minimap }
+          });
+          Object.values(state.models).forEach((m) => {
+            m.updateOptions({ tabSize: Number(state.settings.tabSize), insertSpaces: true });
+          });
+        }
+      }
+
+      /* ===================================================================
+       * 16. UTILITIES
+       * =================================================================== */
+      function sanitizeFilePath(input) {
+        return String(input || '')
+          .trim()
+          .replace(/\\/g, '/')
+          .replace(/\.\.+/g, '')
+          .replace(/^\/+/, '');
+      }
+
+      function slugify(text) {
+        return String(text || '')
+          .toLowerCase()
+          .replace(/[^a-z0-9-_]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+      }
+
+      function escapeHTML(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      /* ===================================================================
+       * 17. EVENT LISTENERS & UI BINDINGS
+       * =================================================================== */
+      function bindEvents() {
+        // Execution Controls
+        document.getElementById('btnRunCode').addEventListener('click', () => {
+          runPreview(true);
+          showToast('Código ejecutado en vista previa', 'success');
+        });
+        document.getElementById('btnRefreshPreview').addEventListener('click', () => {
+          runPreview(true);
+          showToast('Vista previa actualizada', 'info');
+        });
+        document.getElementById('btnStopPreview').addEventListener('click', stopPreview);
+        document.getElementById('btnResumePreview').addEventListener('click', () => runPreview(true));
+
+        document.getElementById('btnToggleAutoRun').addEventListener('click', () => {
+          state.settings.autoRun = !state.settings.autoRun;
+          applySettingsToEditor();
+          saveProjectToDB(false);
+          showToast(`Vista previa automática: ${state.settings.autoRun ? 'Activada' : 'Desactivada'}`, 'info');
+        });
+
+        // Header Buttons
+        document.getElementById('btnFormatActive').addEventListener('click', formatActiveFile);
+        document.getElementById('btnSaveProject').addEventListener('click', () => saveProjectToDB(true));
+        document.getElementById('btnExportZipQuick').addEventListener('click', () => downloadProjectZIP());
+        document.getElementById('btnResetLayoutTop').addEventListener('click', resetWorkspaceLayout);
+
+        // Quick Language Switchers (HTML / CSS / JS)
+        document.querySelectorAll('.quick-lang-tab').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const lang = btn.getAttribute('data-quick-lang');
+            const ext = '.' + lang;
+            const preferred = lang === 'html' ? 'index.html' : lang === 'css' ? 'styles.css' : 'app.js';
+            if (state.currentProject.files[preferred]) {
+              switchToFile(preferred);
+              return;
+            }
+            const found = Object.keys(state.currentProject.files).find((f) => f.endsWith(ext));
+            if (found) {
+              switchToFile(found);
+            } else {
+              promptCreateFile();
+            }
+          });
+        });
+
+        // Format Language Buttons in Sidebar
+        document.querySelectorAll('.format-lang-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            formatSpecificLanguage(btn.getAttribute('data-format-type'));
+          });
+        });
+
+        // Dropdown Menu Actions (`data-action`)
+        document.addEventListener('click', (e) => {
+          const actionBtn = e.target.closest('[data-action]');
+          if (actionBtn) {
+            const action = actionBtn.getAttribute('data-action');
+            handleMenuAction(action);
+          }
+        });
+
+        // File Tree Delegation
+        document.getElementById('fileTreeContainer').addEventListener('click', (e) => {
+          const newInFolder = e.target.closest('[data-folder-newfile]');
+          if (newInFolder) {
+            e.stopPropagation();
+            promptCreateFile(newInFolder.getAttribute('data-folder-newfile'));
+            return;
+          }
+          const renFolder = e.target.closest('[data-folder-rename]');
+          if (renFolder) {
+            e.stopPropagation();
+            promptRenameFolder(renFolder.getAttribute('data-folder-rename'));
+            return;
+          }
+          const delFolder = e.target.closest('[data-folder-delete]');
+          if (delFolder) {
+            e.stopPropagation();
+            promptDeleteFolder(delFolder.getAttribute('data-folder-delete'));
+            return;
+          }
+          const dupFile = e.target.closest('[data-file-duplicate]');
+          if (dupFile) {
+            e.stopPropagation();
+            duplicateFile(dupFile.getAttribute('data-file-duplicate'));
+            return;
+          }
+          const renFile = e.target.closest('[data-file-rename]');
+          if (renFile) {
+            e.stopPropagation();
+            promptRenameFile(renFile.getAttribute('data-file-rename'));
+            return;
+          }
+          const delFile = e.target.closest('[data-file-delete]');
+          if (delFile) {
+            e.stopPropagation();
+            promptDeleteFile(delFile.getAttribute('data-file-delete'));
+            return;
+          }
+          const openRow = e.target.closest('[data-open-file]');
+          if (openRow) {
+            switchToFile(openRow.getAttribute('data-open-file'));
+            if (window.innerWidth < 1024) {
+              switchMobileTab('editor');
+            }
+          }
+        });
+
+        // Open Tabs Delegation
+        document.getElementById('openTabsContainer').addEventListener('click', (e) => {
+          const closeBtn = e.target.closest('[data-close-tab]');
+          if (closeBtn) {
+            e.stopPropagation();
+            closeTab(closeBtn.getAttribute('data-close-tab'));
+            return;
+          }
+          const tabEl = e.target.closest('[data-tab-file]');
+          if (tabEl) {
+            switchToFile(tabEl.getAttribute('data-tab-file'));
+          }
+        });
+
+        // Sidebar Header Buttons
+        document.getElementById('btnSideNewFile').addEventListener('click', () => promptCreateFile());
+        document.getElementById('btnSideNewFolder').addEventListener('click', promptCreateFolder);
+        document.getElementById('btnSideImport').addEventListener('click', () => document.getElementById('hiddenFileInput').click());
+        document.getElementById('btnRenameProject').addEventListener('click', () => {
+          openDialog({
+            title: 'Renombrar Proyecto',
+            message: 'Ingresa el nuevo nombre para este proyecto:',
+            inputValue: state.currentProject.name,
+            confirmText: 'Guardar Nombre',
+            onConfirm: (val) => {
+              if (!val.trim()) return;
+              state.currentProject.name = val.trim();
+              renderFileExplorer();
+              saveProjectToDB(true);
+            }
+          });
+        });
+
+        // Activity Bar Switching
+        document.querySelectorAll('.activity-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const view = btn.getAttribute('data-sidebar-view');
+            const sidebar = document.getElementById('sidebarPanel');
+            sidebar.classList.remove('hidden');
+
+            document.querySelectorAll('.activity-btn').forEach((b) => {
+              b.className = 'activity-btn w-9 h-9 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-codex-surface flex items-center justify-center transition';
+            });
+            btn.className = 'activity-btn w-9 h-9 rounded-xl bg-violet-600/20 text-violet-400 border border-violet-500/40 flex items-center justify-center transition';
+
+            document.getElementById('sidebarViewExplorer').classList.toggle('hidden', view !== 'explorer');
+            document.getElementById('sidebarViewSearch').classList.toggle('hidden', view !== 'search');
+            document.getElementById('sidebarViewExport').classList.toggle('hidden', view !== 'export');
+
+            if (view === 'search') {
+              document.getElementById('globalSearchInput').focus();
+            }
+          });
+        });
+
+        // Global Search Input & Results
+        document.getElementById('globalSearchInput').addEventListener('input', (e) => {
+          performGlobalSearch(e.target.value);
+        });
+        document.getElementById('globalSearchResults').addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-search-jump]');
+          if (!btn) return;
+          const file = btn.getAttribute('data-search-jump');
+          const line = Number(btn.getAttribute('data-search-line')) || 1;
+          switchToFile(file);
+          if (state.monacoLoaded && state.editor) {
+            state.editor.revealLineInCenter(line);
+            state.editor.setPosition({ lineNumber: line, column: 1 });
+            state.editor.focus();
+          }
+        });
+        document.getElementById('btnTriggerEditorReplace').addEventListener('click', () => {
+          handleMenuAction('editor-replace');
+        });
+
+        // Editor Quick Toolbar Icons
+        document.getElementById('btnEditorSearch').addEventListener('click', () => handleMenuAction('editor-find'));
+        document.getElementById('btnEditorReplace').addEventListener('click', () => handleMenuAction('editor-replace'));
+        document.getElementById('btnFontDecrease').addEventListener('click', () => {
+          state.settings.fontSize = Math.max(10, Number(state.settings.fontSize) - 1);
+          applySettingsToEditor();
+        });
+        document.getElementById('btnFontIncrease').addEventListener('click', () => {
+          state.settings.fontSize = Math.min(28, Number(state.settings.fontSize) + 1);
+          applySettingsToEditor();
+        });
+        document.getElementById('btnToggleWordWrap').addEventListener('click', () => {
+          state.settings.wordWrap = !state.settings.wordWrap;
+          applySettingsToEditor();
+          showToast(`Ajuste de línea: ${state.settings.wordWrap ? 'Activado' : 'Desactivado'}`, 'info');
+        });
+        document.getElementById('btnCopyAllCode').addEventListener('click', () => {
+          syncActiveEditorContent();
+          const code = state.currentProject.files[state.currentProject.activeFile] || '';
+          const temp = document.createElement('textarea');
+          temp.value = code;
+          document.body.appendChild(temp);
+          temp.select();
+          document.execCommand('copy');
+          document.body.removeChild(temp);
+          showToast('Código copiado al portapapeles', 'success');
+        });
+        document.getElementById('btnDuplicateCurrentFile').addEventListener('click', () => {
+          duplicateFile(state.currentProject.activeFile);
+        });
+
+        // Device Mode Buttons
+        document.querySelectorAll('.device-mode-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            setDeviceViewportMode(btn.getAttribute('data-device'));
+          });
+        });
+
+        // Preview Fullscreen & Standalone Download
+        document.getElementById('btnOpenPreviewNewWindow').addEventListener('click', () => downloadStandaloneHTML());
+        document.getElementById('btnTogglePreviewFullscreen').addEventListener('click', () => {
+          const previewSec = document.getElementById('previewSection');
+          const isFull = previewSec.classList.toggle('fixed');
+          if (isFull) {
+            previewSec.classList.add('inset-0', 'z-50', '!w-screen', '!h-screen');
+          } else {
+            previewSec.classList.remove('inset-0', 'z-50', '!w-screen', '!h-screen');
+          }
+        });
+
+        // Console Controls
+        document.getElementById('btnClearConsole').addEventListener('click', clearConsole);
+        document.getElementById('btnToggleConsoleMinimize').addEventListener('click', toggleConsolePanel);
+        document.getElementById('btnStatusToggleConsole').addEventListener('click', toggleConsolePanel);
+        document.getElementById('btnSendConsoleCmd').addEventListener('click', executeConsoleCommand);
+        document.getElementById('consoleInput').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') executeConsoleCommand();
+        });
+
+        document.querySelectorAll('.console-filter-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            state.consoleFilter = btn.getAttribute('data-console-filter');
+            document.querySelectorAll('.console-filter-btn').forEach((b) => {
+              b.classList.remove('bg-violet-600/30', 'text-violet-200', 'border', 'border-violet-500/40');
+            });
+            btn.classList.add('bg-violet-600/30', 'text-violet-200', 'border', 'border-violet-500/40');
+            renderConsoleLogs();
+          });
+        });
+
+        // Status Bar Indent Toggle
+        document.getElementById('statusIndent').addEventListener('click', () => {
+          state.settings.tabSize = state.settings.tabSize === 2 ? 4 : 2;
+          applySettingsToEditor();
+          showToast(`Sangría cambiada a ${state.settings.tabSize} espacios`, 'info');
+        });
+
+        // Hidden File Input Change
+        document.getElementById('hiddenFileInput').addEventListener('change', (e) => {
+          handleImportedFiles(e.target.files);
+          e.target.value = '';
+        });
+
+        // Welcome Modal Bindings
+        document.getElementById('btnOpenWelcome').addEventListener('click', openWelcomeModal);
+        document.getElementById('btnSwitchProject').addEventListener('click', openWelcomeModal);
+        document.getElementById('btnActivityWelcome').addEventListener('click', openWelcomeModal);
+        document.getElementById('btnCloseWelcome').addEventListener('click', closeWelcomeModal);
+        document.getElementById('btnWelcomeContinue').addEventListener('click', closeWelcomeModal);
+        document.getElementById('btnWelcomeNewProject').addEventListener('click', promptCreateNewProject);
+        document.getElementById('btnWelcomeImportFiles').addEventListener('click', () => {
+          document.getElementById('hiddenFileInput').click();
+        });
+        document.getElementById('btnWelcomeLoadDemo').addEventListener('click', async () => {
+          const demoProj = {
+            id: 'proj-default-codex',
+            name: 'Cyber Dashboard Demo',
+            updatedAt: Date.now(),
+            folders: ['assets'],
+            files: JSON.parse(JSON.stringify(DEFAULT_PROJECT_FILES)),
+            openTabs: ['index.html', 'styles.css', 'app.js'],
+            activeFile: 'index.html'
+          };
+          loadProjectIntoWorkspace(demoProj);
+          await saveProjectToDB(true);
+          closeWelcomeModal();
+        });
+
+        document.getElementById('welcomeProjectsList').addEventListener('click', async (e) => {
+          const delBtn = e.target.closest('[data-delete-project]');
+          if (delBtn) {
+            e.stopPropagation();
+            const id = delBtn.getAttribute('data-delete-project');
+            await deleteProjectFromDB(id);
+            await renderWelcomeProjectsList();
+            showToast('Proyecto eliminado de IndexedDB', 'info');
+            return;
+          }
+          const loadBtn = e.target.closest('[data-load-project]');
+          if (loadBtn) {
+            const id = loadBtn.getAttribute('data-load-project');
+            const all = await getAllProjectsFromDB();
+            const found = all.find((p) => p.id === id);
+            if (found) {
+              loadProjectIntoWorkspace(found);
+              closeWelcomeModal();
+              showToast(`Proyecto "${found.name}" cargado`, 'success');
+            }
+          }
+        });
+
+        // Settings Modal Bindings
+        const openSettings = () => {
+          applySettingsToEditor();
+          document.getElementById('settingsModal').classList.remove('hidden');
+        };
+        const closeSettings = () => {
+          document.getElementById('settingsModal').classList.add('hidden');
+          saveProjectToDB(false);
+        };
+        document.getElementById('btnOpenSettings').addEventListener('click', openSettings);
+        document.getElementById('btnActivitySettings').addEventListener('click', openSettings);
+        document.getElementById('btnCloseSettings').addEventListener('click', closeSettings);
+        document.getElementById('btnSaveSettingsDone').addEventListener('click', closeSettings);
+        document.getElementById('btnResetLayoutFromSettings').addEventListener('click', () => {
+          resetWorkspaceLayout();
+          closeSettings();
+        });
+
+        document.getElementById('settingTheme').addEventListener('change', (e) => {
+          state.settings.theme = e.target.value;
+          applySettingsToEditor();
+        });
+        document.getElementById('settingFontSize').addEventListener('input', (e) => {
+          state.settings.fontSize = Math.min(28, Math.max(10, Number(e.target.value) || 14));
+          applySettingsToEditor();
+        });
+        document.getElementById('settingTabSize').addEventListener('change', (e) => {
+          state.settings.tabSize = Number(e.target.value) || 2;
+          applySettingsToEditor();
+        });
+        document.getElementById('settingWordWrap').addEventListener('change', (e) => {
+          state.settings.wordWrap = e.target.checked;
+          applySettingsToEditor();
+        });
+        document.getElementById('settingMinimap').addEventListener('change', (e) => {
+          state.settings.minimap = e.target.checked;
+          applySettingsToEditor();
+        });
+        document.getElementById('settingAutoRun').addEventListener('change', (e) => {
+          state.settings.autoRun = e.target.checked;
+          applySettingsToEditor();
+        });
+        document.getElementById('settingAutoSave').addEventListener('change', (e) => {
+          state.settings.autoSave = e.target.checked;
+          applySettingsToEditor();
+        });
+
+        // Save As Modal Bindings
+        document.getElementById('btnCloseSaveAs').addEventListener('click', () => {
+          document.getElementById('saveAsModal').classList.add('hidden');
+        });
+        document.getElementById('btnCancelSaveAs').addEventListener('click', () => {
+          document.getElementById('saveAsModal').classList.add('hidden');
+        });
+        document.getElementById('btnConfirmSaveAs').addEventListener('click', () => {
+          const name = document.getElementById('saveAsFilenameInput').value.trim() || 'rafael-codex-export';
+          const format = document.getElementById('saveAsFormatSelect').value;
+          document.getElementById('saveAsModal').classList.add('hidden');
+
+          if (format === 'standalone-html') {
+            downloadStandaloneHTML(name);
+          } else if (format === 'zip') {
+            downloadProjectZIP(name);
+          } else {
+            syncActiveEditorContent();
+            const active = state.currentProject.activeFile;
+            const ext = getFileExtension(active);
+            const finalName = name.endsWith(ext) ? name : `${name}${ext}`;
+            const blob = new Blob([state.currentProject.files[active] || ''], { type: 'text/plain;charset=utf-8' });
+            triggerBlobDownload(blob, finalName);
+            showToast(`Archivo "${finalName}" descargado`, 'success');
+          }
+        });
+
+        // Generic Dialog Bindings
+        document.getElementById('btnCloseDialog').addEventListener('click', closeDialog);
+        document.getElementById('btnDialogCancel').addEventListener('click', closeDialog);
+        document.getElementById('btnDialogConfirm').addEventListener('click', () => {
+          if (activeDialogCallback) activeDialogCallback();
+        });
+        document.getElementById('dialogInput').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && activeDialogCallback) activeDialogCallback();
+          if (e.key === 'Escape') closeDialog();
+        });
+
+        // Mobile Navigation Tabs & Drawer
+        document.getElementById('btnMobileDrawer').addEventListener('click', () => {
+          const sb = document.getElementById('sidebarPanel');
+          sb.classList.toggle('max-lg:hidden');
+        });
+        document.getElementById('btnSideCollapseMobile').addEventListener('click', () => {
+          document.getElementById('sidebarPanel').classList.add('max-lg:hidden');
+        });
+        document.querySelectorAll('.mobile-nav-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            switchMobileTab(btn.getAttribute('data-mobile-tab'));
+          });
+        });
+
+        // Global Keyboard Shortcuts
+        window.addEventListener('keydown', (e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+            e.preventDefault();
+            saveProjectToDB(true);
+          } else if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            runPreview(true);
+          } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+            e.preventDefault();
+            handleMenuAction('toggle-sidebar');
+          }
+        });
+      }
+
+      function switchMobileTab(tab) {
+        const sidebar = document.getElementById('sidebarPanel');
+        const editorSec = document.getElementById('editorSection');
+        const previewSec = document.getElementById('previewSection');
+        const consoleSec = document.getElementById('consoleSection');
+
+        document.querySelectorAll('.mobile-nav-btn').forEach((b) => {
+          const active = b.getAttribute('data-mobile-tab') === tab;
+          b.className = active
+            ? 'mobile-nav-btn flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-violet-600/20 text-violet-300 border border-violet-500/30'
+            : 'mobile-nav-btn flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 text-slate-400 hover:text-white';
+        });
+
+        if (tab === 'files') {
+          sidebar.classList.remove('max-lg:hidden');
+        } else if (tab === 'editor') {
+          sidebar.classList.add('max-lg:hidden');
+          editorSec.classList.remove('max-lg:hidden');
+          previewSec.classList.add('max-lg:hidden');
+        } else if (tab === 'preview') {
+          sidebar.classList.add('max-lg:hidden');
+          editorSec.classList.add('max-lg:hidden');
+          previewSec.classList.remove('max-lg:hidden');
+          runPreview(false);
+        } else if (tab === 'console') {
+          sidebar.classList.add('max-lg:hidden');
+          state.consoleMinimized = false;
+          consoleSec.style.height = '15rem';
+        }
+
+        if (state.editor) setTimeout(() => state.editor.layout(), 60);
+      }
+
+      function toggleConsolePanel() {
+        const consoleSec = document.getElementById('consoleSection');
+        const icon = document.getElementById('iconConsoleToggle');
+        state.consoleMinimized = !state.consoleMinimized;
+
+        if (state.consoleMinimized) {
+          consoleSec.style.height = '2rem';
+          icon.className = 'fa-solid fa-chevron-up text-[10px]';
+        } else {
+          consoleSec.style.height = '12rem';
+          icon.className = 'fa-solid fa-chevron-down text-[10px]';
+        }
+        if (state.editor) setTimeout(() => state.editor.layout(), 50);
+      }
+
+      function handleMenuAction(action) {
+        switch (action) {
+          case 'new-project':
+            promptCreateNewProject();
+            break;
+          case 'open-project-modal':
+            openWelcomeModal();
+            break;
+          case 'new-file':
+            promptCreateFile();
+            break;
+          case 'new-folder':
+            promptCreateFolder();
+            break;
+          case 'save-project':
+            saveProjectToDB(true);
+            break;
+          case 'save-as':
+            document.getElementById('saveAsFilenameInput').value = slugify(state.currentProject.name) || 'mi-proyecto';
+            document.getElementById('saveAsModal').classList.remove('hidden');
+            break;
+          case 'import-files':
+            document.getElementById('hiddenFileInput').click();
+            break;
+          case 'download-html':
+            downloadStandaloneHTML();
+            break;
+          case 'download-project-files':
+            downloadIndependentProjectFiles();
+            break;
+          case 'download-zip':
+            downloadProjectZIP();
+            break;
+          case 'editor-undo':
+            if (state.editor) state.editor.trigger('keyboard', 'undo', null);
+            break;
+          case 'editor-redo':
+            if (state.editor) state.editor.trigger('keyboard', 'redo', null);
+            break;
+          case 'editor-find':
+            if (state.editor) {
+              state.editor.focus();
+              state.editor.getAction('actions.find').run();
+            }
+            break;
+          case 'editor-replace':
+            if (state.editor) {
+              state.editor.focus();
+              state.editor.getAction('editor.action.startFindReplaceAction').run();
+            }
+            break;
+          case 'global-search':
+            document.querySelector('[data-sidebar-view="search"]').click();
+            break;
+          case 'format-code':
+            formatActiveFile();
+            break;
+          case 'format-all':
+            formatAllProjectFiles();
+            break;
+          case 'toggle-sidebar':
+            document.getElementById('sidebarPanel').classList.toggle('hidden');
+            if (state.editor) state.editor.layout();
+            break;
+          case 'toggle-console':
+            toggleConsolePanel();
+            break;
+          case 'toggle-minimap':
+            state.settings.minimap = !state.settings.minimap;
+            applySettingsToEditor();
+            break;
+          case 'reset-layout':
+            resetWorkspaceLayout();
+            break;
+        }
+      }
+
+      /* ===================================================================
+       * 18. BOOTSTRAP APPLICATION ON LOAD
+       * =================================================================== */
+      window.addEventListener('DOMContentLoaded', async () => {
+        logSystem('Iniciando RAFAEL-CODEX STUDIO v1.0...');
+        bindEvents();
+        initSplitters();
+
+        await initIndexedDB();
+        await loadInitialStateFromDB();
+
+        renderFileExplorer();
+        renderOpenTabs();
+
+        await initMonacoEditor();
+        applySettingsToEditor();
+        switchToFile(state.currentProject.activeFile);
+        runPreview(false);
+
+        // Open Welcome screen on initial launch
+        await openWelcomeModal();
+      });
+    })();
+  </script>
+</body>
+</html>

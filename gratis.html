@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+  <link rel="dns-prefetch" href="https://www.gstatic.com">
+  <link rel="dns-prefetch" href="https://firestore.googleapis.com">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>✦ RAFAEL-CODEX ✦ — CATEGORÍA GRATIS | Ingeniero en Sistemas</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            orbitron: ['Orbitron', 'sans-serif'],
+            inter: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          },
+          colors: {
+            bgPrimary: '#03040A',
+            bgSecondary: '#070B18',
+            bgTertiary: '#0B1020',
+            bgPanel: '#080D1B',
+            neonPurple: '#9D00FF',
+            neonLilac: '#B34CFF',
+            neonViolet: '#7B2CFF',
+            neonCyan: '#00E5FF',
+            neonBlue: '#007BFF',
+            neonOrange: '#FFA500',
+            neonPink: '#FF20C8',
+            neonGreen: '#00FFB2',
+            neonYellow: '#FFDD00'
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* ==========================================================================
+       1. RESET & BASE MOBILE-FIRST
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      max-width: 100vw;
+      background-color: #03040A;
+      color: #FFFFFF;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    pre, code {
+      user-select: text;
+    }
+
+    /* ==========================================================================
+       2. FONDOS & CONTENEDORES HUD PRINCIPALES
+       ========================================================================== */
+    .neural-space-bg {
+      position: relative;
+      background:
+        radial-gradient(ellipse 70% 60% at 50% 42%, rgba(0, 229, 255, 0.12) 0%, rgba(0, 140, 255, 0.06) 45%, rgba(3, 4, 10, 0.98) 85%),
+        radial-gradient(circle at 10% 35%, rgba(0, 255, 178, 0.1) 0%, transparent 35%),
+        radial-gradient(circle at 90% 35%, rgba(157, 0, 255, 0.12) 0%, transparent 35%),
+        linear-gradient(180deg, #020308 0%, #050b18 55%, #03040A 100%);
+    }
+
+    .hud-screen-shell {
+      background: rgba(6, 5, 16, 0.78);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(0, 229, 255, 0.28);
+      box-shadow:
+        0 0 35px rgba(0, 229, 255, 0.08),
+        inset 0 0 25px rgba(0, 255, 178, 0.06);
+      border-radius: 14px;
+      position: relative;
+    }
+
+    /* ==========================================================================
+       3. HEADER & NAVEGACIÓN HUD
+       ========================================================================== */
+    .hud-header {
+      background: rgba(3, 4, 12, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+      border: 1px solid rgba(0, 229, 255, 0.45);
+      box-shadow:
+        0 0 28px rgba(0, 229, 255, 0.18),
+        inset 0 1px 0 rgba(0, 229, 255, 0.55),
+        inset 0 -1px 0 rgba(0, 255, 178, 0.45);
+    }
+
+    .nav-pill-active {
+      background: linear-gradient(180deg, rgba(0, 255, 178, 0.2) 0%, rgba(0, 229, 255, 0.4) 100%);
+      border: 1px solid #00E5FF;
+      box-shadow: 0 0 18px rgba(0, 229, 255, 0.5), inset 0 0 10px rgba(0, 255, 178, 0.3);
+      clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+      min-height: 40px;
+    }
+
+    .whatsapp-hud-btn {
+      position: relative;
+      background: linear-gradient(90deg, rgba(0, 255, 157, 0.14), rgba(0, 217, 255, 0.14));
+      clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+      border: 1.5px solid #00FFB2;
+      box-shadow: -6px 0 18px rgba(0, 255, 157, 0.35), 6px 0 18px rgba(0, 217, 255, 0.35), inset 0 0 12px rgba(0, 255, 178, 0.2);
+      transition: all 0.25s ease;
+      min-height: 40px;
+      min-width: 40px;
+    }
+
+    .whatsapp-hud-btn:hover {
+      transform: translateY(-1px) scale(1.02);
+      box-shadow: -8px 0 25px rgba(0, 255, 157, 0.65), 8px 0 25px rgba(0, 217, 255, 0.65), inset 0 0 18px rgba(0, 255, 178, 0.35);
+    }
+
+    /* Menú desplegable móvil (para index.html / navegación global) */
+    #mobile-menu {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+
+    #mobile-menu a,
+    #mobile-menu button {
+      min-height: 44px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+    }
+
+    /* ==========================================================================
+       4. PANELES DE REPRODUCTOR, DETALLES Y BOTONES NEÓN
+       ========================================================================== */
+    .player-hud-box {
+      background: linear-gradient(160deg, rgba(10, 12, 28, 0.94) 0%, rgba(6, 7, 18, 0.98) 100%);
+      clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px);
+      border: 1.5px solid rgba(0, 229, 255, 0.35);
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.7), inset 0 0 18px rgba(0, 229, 255, 0.08);
+    }
+
+    .details-hud-box {
+      background: linear-gradient(145deg, rgba(10, 12, 26, 0.9) 0%, rgba(5, 6, 15, 0.96) 100%);
+      clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+      border: 1px solid rgba(0, 229, 255, 0.25);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.65), inset 0 0 20px rgba(0, 229, 255, 0.06);
+    }
+
+    .btn-gratis-neon {
+      background: linear-gradient(90deg, #007BFF 0%, #00E5FF 50%, #00FFB2 100%);
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.45), -4px 0 16px rgba(0, 255, 178, 0.4);
+      transition: all 0.25s ease;
+      color: #03040A;
+      font-weight: 800;
+      min-height: 44px;
+    }
+
+    .btn-gratis-neon:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 28px rgba(0, 229, 255, 0.75), -4px 0 22px rgba(0, 255, 178, 0.7);
+    }
+
+    .btn-secondary-hud {
+      background: rgba(8, 20, 38, 0.85);
+      border: 1px solid rgba(0, 229, 255, 0.45);
+      box-shadow: inset 0 0 12px rgba(0, 229, 255, 0.12);
+      transition: all 0.25s ease;
+      min-height: 44px;
+    }
+
+    .btn-secondary-hud:hover {
+      background: rgba(0, 229, 255, 0.2);
+      border-color: #00E5FF;
+      box-shadow: 0 0 16px rgba(0, 229, 255, 0.4);
+      transform: translateY(-1px);
+    }
+
+    /* ==========================================================================
+       5. CARRUSEL & PLACAS INFERIORES
+       ========================================================================== */
+    .carousel-card {
+      background: linear-gradient(180deg, rgba(12, 14, 30, 0.95) 0%, rgba(6, 7, 16, 0.98) 100%);
+      border: 1px solid rgba(0, 229, 255, 0.28);
+      border-radius: 10px;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+    }
+
+    .carousel-card:hover,
+    .carousel-card.active-card {
+      transform: translateY(-3px);
+      border-color: #00FFB2;
+      box-shadow: 0 6px 20px rgba(0, 255, 178, 0.25), 0 0 14px rgba(0, 229, 255, 0.3);
+    }
+
+    .hero-plaque-left {
+      background: linear-gradient(90deg, rgba(4, 8, 22, 0.95), rgba(10, 32, 28, 0.9));
+      clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 100%, 0 100%);
+      border-top: 1px solid rgba(0, 255, 178, 0.45);
+      border-right: 1px solid rgba(0, 229, 255, 0.45);
+    }
+
+    .hero-plaque-right {
+      background: linear-gradient(90deg, rgba(10, 32, 28, 0.9), rgba(4, 8, 22, 0.95));
+      clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%);
+      border-top: 1px solid rgba(0, 255, 178, 0.45);
+      border-left: 1px solid rgba(0, 229, 255, 0.35);
+    }
+
+    .side-neon-line {
+      height: 3.5px;
+      border-radius: 999px;
+      pointer-events: none;
+    }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    #neon-cursor {
+      position: fixed;
+      width: 24px;
+      height: 24px;
+      border: 1.5px solid rgba(0, 255, 178, 0.75);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 14px rgba(0, 255, 178, 0.6), inset 0 0 6px rgba(0, 229, 255, 0.5);
+      mix-blend-mode: screen;
+    }
+
+    /* ==========================================================================
+       6. REGLAS RESPONSIVE COMPARTIDAS (HERO 3D, CATÁLOGO, MODALES, VISTA MÓVIL)
+       ========================================================================== */
+    #inicio,
+    #catalog {
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+
+    #robot-canvas-container {
+      width: 100%;
+      position: relative;
+    }
+
+    #robot-canvas-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+
+    #robot-speech-bubble {
+      max-width: 80vw;
+      word-wrap: break-word;
+    }
+
+    /* ==========================================================================
+       7. BREAKPOINTS MOBILE-FIRST Y MEDIA QUERIES ESPECÍFICOS
+       ========================================================================== */
+
+    /* --- HASTA TABLET / PORTÁTIL PEQUEÑO (≤ 1023px) --- */
+    @media (max-width: 1023px) {
+      body {
+        height: auto !important;
+        max-height: none !important;
+        overflow-y: auto !important;
+      }
+
+      .hud-screen-shell {
+        height: auto !important;
+        overflow: visible !important;
+      }
+
+      /* Hero & Robot 3D (compatibilidad index.html) */
+      #inicio {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding-top: 76px;
+      }
+
+      .hero-title-desktop,
+      .hero-title-mobile,
+      #inicio h1 {
+        font-size: clamp(1.6rem, 8vw, 2.6rem) !important;
+        white-space: normal !important;
+        line-height: 1.15 !important;
+        word-break: break-word;
+      }
+
+      .feature-hud-card {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 14px !important;
+      }
+
+      #robot-canvas-container {
+        height: 360px !important;
+        min-height: 340px !important;
+        max-height: 400px !important;
+        width: 100% !important;
+        margin: 0 auto;
+      }
+
+      /* Catálogo HUD (compatibilidad index.html) */
+      .catalog-hud-shell {
+        padding: 14px !important;
+        clip-path: none !important;
+        border-radius: 12px;
+      }
+    }
+
+    /* --- MÓVIL GRANDE Y PEQUEÑO (≤ 767px) --- */
+    @media (max-width: 767px) {
+      .holo-screen-container,
+      .cyber-floor-grid,
+      .lab-strip-left,
+      .lab-strip-right {
+        display: none !important;
+      }
+
+      .hud-header {
+        height: 60px !important;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+      }
+
+      #detail-title {
+        font-size: clamp(1.2rem, 5.5vw, 1.65rem) !important;
+        line-height: 1.25 !important;
+      }
+
+      #detail-description {
+        font-size: 14px !important;
+        line-height: 1.55 !important;
+        max-width: 100% !important;
+      }
+
+      /* Modal Universal a PANTALLA COMPLETA en Móvil */
+      #universal-modal {
+        padding: 0 !important;
+      }
+
+      #universal-modal > div {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        padding: 10px !important;
+        border-radius: 0 !important;
+        border: none !important;
+        clip-path: none !important;
+      }
+
+      /* Tarjetas de Estadísticas 2x2 */
+      .stat-hud-box {
+        padding: 10px !important;
+      }
+
+      /* Inputs de búsqueda sin auto-zoom en iOS */
+      input[type="text"],
+      input[type="search"] {
+        font-size: 16px !important;
+      }
+    }
+
+    /* --- UMBRAL 640px (WhatsApp solo ícono y Grid 1 columna) --- */
+    @media (max-width: 640px) {
+      #btn-whatsapp-header .whatsapp-label {
+        display: none !important;
+      }
+
+      #btn-whatsapp-header {
+        padding: 6px 8px !important;
+        justify-content: center;
+      }
+
+      #catalog-grid {
+        grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+      }
+
+      .carousel-card {
+        width: 165px !important;
+      }
+    }
+
+    /* --- MÓVIL PEQUEÑO (≤ 480px — ej. iPhone SE 375px) --- */
+    @media (max-width: 480px) {
+      body {
+        padding: 4px !important;
+      }
+
+      .hud-screen-shell {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+        padding-top: 6px !important;
+        border-radius: 10px !important;
+      }
+
+      .hud-header {
+        height: 58px !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+        gap: 6px !important;
+      }
+
+      .brand-title-text {
+        font-size: 12.5px !important;
+        letter-spacing: 0.5px !important;
+      }
+
+      .brand-subtitle-text {
+        display: none !important;
+      }
+
+      .nav-pill-active {
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+      }
+
+      .player-hud-box {
+        padding: 10px !important;
+      }
+
+      .details-hud-box {
+        padding: 14px !important;
+      }
+
+      .hero-plaque-left,
+      .hero-plaque-right {
+        padding: 6px 12px !important;
+      }
+
+      #robot-speech-bubble {
+        font-size: 10px !important;
+        max-width: 80vw !important;
+      }
+    }
+
+    /* --- ESCRITORIO (≥ 1024px) --- */
+    @media (min-width: 1024px) {
+      .hud-header {
+        clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px);
+      }
+
+      .player-hud-box {
+        clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px);
+      }
+
+      .details-hud-box {
+        clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px));
+      }
+    }
+  </style>
+</head>
+
+<body class="neural-space-bg min-h-screen lg:h-screen lg:max-h-screen lg:overflow-hidden flex flex-col justify-between p-1.5 sm:p-3 selection:bg-neonGreen selection:text-black">
+
+  <div id="neon-cursor" class="hidden lg:block"></div>
+
+  <!-- Líneas decorativas laterales (ocultas en móvil/tablet para evitar overflow) -->
+  <div class="fixed left-0 top-[32%] w-20 side-neon-line bg-neonCyan shadow-[0_0_15px_#00E5FF] -rotate-6 opacity-80 z-0 hidden xl:block pointer-events-none"></div>
+  <div class="fixed left-0 top-[42%] w-14 side-neon-line bg-neonGreen shadow-[0_0_15px_#00FFB2] -rotate-6 opacity-80 z-0 hidden xl:block pointer-events-none"></div>
+  <div class="fixed right-0 top-[35%] w-16 side-neon-line bg-neonBlue shadow-[0_0_15px_#007BFF] rotate-6 opacity-80 z-0 hidden xl:block pointer-events-none"></div>
+  <div class="fixed right-0 top-[43%] w-20 side-neon-line bg-neonCyan shadow-[0_0_15px_#00E5FF] rotate-6 opacity-80 z-0 hidden xl:block pointer-events-none"></div>
+
+  <div class="hud-screen-shell max-w-[1540px] w-full lg:h-full mx-auto flex-1 flex flex-col justify-between lg:overflow-hidden z-10 px-2.5 sm:px-5 pt-2 pb-0">
+
+    <!-- HEADER RESPONSIVE -->
+    <header id="header" class="shrink-0 w-full">
+      <div class="hud-header h-[60px] sm:h-[64px] px-2.5 sm:px-4 lg:px-6 flex items-center justify-between gap-2 relative">
+        <div class="absolute top-0 left-1/4 right-1/4 h-[2px] bg-gradient-to-r from-transparent via-neonGreen to-transparent opacity-80 pointer-events-none"></div>
+
+        <!-- Logo + Botón Inicio -->
+        <div class="flex items-center gap-2 sm:gap-5 min-w-0 shrink">
+          <a href="index.html" class="flex items-center gap-2 sm:gap-3 group min-w-0 shrink">
+            <div class="relative w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center shrink-0">
+              <div class="absolute inset-0 bg-neonGreen/20 rounded-lg blur-md group-hover:bg-neonCyan/40 transition"></div>
+              <svg viewBox="0 0 64 64" class="w-7 h-7 sm:w-9 sm:h-9 relative z-10 drop-shadow-[0_0_12px_rgba(0,255,178,0.9)]">
+                <defs>
+                  <linearGradient id="rLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#00FFB2" />
+                    <stop offset="45%" stop-color="#00E5FF" />
+                    <stop offset="100%" stop-color="#007BFF" />
+                  </linearGradient>
+                </defs>
+                <path d="M12 8 H38 C48 8 54 14 54 23 C54 31 48 36 40 37 L54 56 H41 L28 38 H22 V56 H12 Z M22 17 V29 H36 C41 29 44 27 44 23 C44 19 41 17 36 17 Z" fill="url(#rLogoGrad)" />
+                <polygon points="8,24 18,24 14,32 4,32" fill="#00FFB2" />
+              </svg>
+            </div>
+
+            <div class="flex flex-col min-w-0">
+              <div class="flex items-center gap-1 font-orbitron font-extrabold text-[12.5px] sm:text-[16px] tracking-wide text-white truncate">
+                <span class="text-neonGreen drop-shadow-[0_0_8px_#00FFB2] text-xs sm:text-base leading-none shrink-0">✦</span>
+                <span class="brand-title-text tracking-wider truncate">RAFAEL-CODEX</span>
+                <span class="text-neonGreen drop-shadow-[0_0_8px_#00FFB2] text-xs sm:text-base leading-none shrink-0">✦</span>
+              </div>
+              <div class="brand-subtitle-text flex items-center gap-1 text-[9px] sm:text-[10.5px] font-semibold tracking-[1.5px] sm:tracking-[2px] text-[#C7D4FF] uppercase truncate">
+                <svg class="w-3 h-3 text-neonGreen shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <rect x="2" y="3" width="20" height="14" rx="2" />
+                  <path d="M8 21h8M12 17v4" />
+                </svg>
+                <span class="truncate">ARCHIVOS GRATIS FIREBASE</span>
+              </div>
+            </div>
+          </a>
+
+          <a href="index.html" onclick="playUISound(680);" class="nav-pill-active px-2.5 sm:px-4 py-1.5 flex items-center justify-center gap-1.5 sm:gap-2 text-[11px] sm:text-[13px] font-semibold text-white transition hover:scale-105 shrink-0">
+            <svg class="w-4 h-4 text-neonGreen shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1v-9.5z" />
+            </svg>
+            <span>Inicio</span>
+          </a>
+        </div>
+
+        <!-- Acciones Derecha: Favoritos, WhatsApp, Perfil -->
+        <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+          <button onclick="openFavoritesModal(); playUISound(680);" title="Mis favoritos" class="relative w-10 h-10 rounded-lg bg-black/60 hover:bg-neonYellow/20 border border-neonYellow/40 hover:border-neonYellow flex items-center justify-center transition group shrink-0">
+            <span class="text-base sm:text-lg">📚</span>
+            <span id="fav-count-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-neonYellow text-black text-[10px] font-bold font-orbitron flex items-center justify-center shadow-[0_0_10px_rgba(255,221,0,0.8)]">0</span>
+          </button>
+
+          <a id="btn-whatsapp-header" href="https://whatsapp.com/channel/0029Vb7Xnj4Chq6IB5ybCe1V" target="_blank" rel="noopener noreferrer" onclick="playUISound(820)" class="whatsapp-hud-btn px-2.5 sm:px-4 py-1.5 flex items-center justify-center gap-2 text-xs font-orbitron font-bold tracking-wider text-white shrink-0">
+            <span class="w-6 h-6 rounded-full bg-neonGreen/20 border border-neonGreen flex items-center justify-center shadow-[0_0_10px_#00FFB2] shrink-0">
+              <svg class="w-3.5 h-3.5 text-neonGreen" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824z"/>
+              </svg>
+            </span>
+            <span class="whatsapp-label hidden sm:inline">CANAL DE WHATSAPP</span>
+          </a>
+
+          <button onclick="playUISound(540)" title="Perfil" class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 group focus:outline-none shrink-0">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full p-[2px] bg-gradient-to-tr from-neonPurple via-neonCyan to-neonPink shadow-[0_0_15px_rgba(138,43,226,0.8)] group-hover:scale-105 transition">
+              <div class="w-full h-full rounded-full bg-[#0B1026] overflow-hidden flex items-center justify-center relative">
+                <img src="favicon.png" alt="Logo de Rafael" class="w-full h-full object-cover" onerror="this.style.display='none'" />
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL (APILADO EN MÓVIL/TABLET, 12 COLS EN ESCRITORIO) -->
+    <main class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 px-1 sm:px-6 py-3 items-start">
+
+      <!-- VISOR Y ACCIONES -->
+      <section class="lg:col-span-6 player-hud-box p-3 sm:p-3.5 flex flex-col justify-between min-h-0">
+        <div class="relative h-[220px] sm:h-[260px] w-full rounded-xl overflow-hidden border border-neonGreen/40 bg-[#050711] group">
+          <img
+  id="main-preview-img"
+  src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80"
+  alt="Vista previa código gratis"
+  class="w-full h-full object-cover opacity-85 group-hover:scale-[1.02] transition duration-500"
+/>
+          <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/60 pointer-events-none"></div>
+
+          <!-- Barra superior del visor -->
+          <div class="absolute top-2.5 sm:top-3 left-2.5 sm:left-3.5 right-2.5 sm:right-3.5 flex items-center justify-between gap-2 z-10">
+            <div class="flex items-center gap-2 min-w-0">
+              <div class="w-7 h-7 rounded-full bg-[#0B261A] border border-neonGreen flex items-center justify-center shadow-[0_0_10px_#00FFB2] shrink-0">
+                <span class="font-orbitron font-black text-[11px] text-neonGreen">R</span>
+              </div>
+              <span id="visor-top-title" class="font-inter font-medium text-xs sm:text-sm text-white truncate drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                Cargando archivo gratis...
+              </span>
+            </div>
+
+            <div class="relative shrink-0">
+              <button onclick="toggleThreeDotsMenu(event)" aria-label="Opciones" class="w-10 h-10 sm:w-9 sm:h-9 rounded-lg bg-black/60 hover:bg-neonGreen/20 border border-white/20 hover:border-neonGreen text-white flex items-center justify-center transition">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>
+                </svg>
+              </button>
+              <div id="three-dots-dropdown" class="hidden absolute right-0 mt-2 w-52 bg-[#0B1024] border border-neonGreen/50 rounded-lg shadow-2xl py-2 z-30 font-inter text-xs">
+                <button onclick="copyCurrentShareLink()" class="w-full min-h-[40px] text-left px-4 py-2 hover:bg-neonGreen/20 text-white flex items-center gap-2 transition">
+                  <svg class="w-3.5 h-3.5 text-neonGreen shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  <span>Copiar enlace directo</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botón central Visualizar Código -->
+          <button
+            onclick="openVisualizationModal()"
+            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 min-h-[44px] py-2.5 px-4 sm:px-5 rounded-xl bg-neonGreen/90 hover:bg-neonGreen text-black font-orbitron font-extrabold text-[11px] sm:text-xs tracking-wider flex items-center justify-center gap-2 whitespace-nowrap shadow-[0_0_25px_rgba(0,255,178,0.75)] transition transform group-hover:scale-105"
+          >
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>VISUALIZAR CÓDIGO</span>
+          </button>
+        </div>
+
+        <!-- Botones de acción (2x2 en móvil, 4 columnas en ≥640px) -->
+        <div class="shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 mt-2">
+          <button onclick="downloadActiveCode()" class="btn-gratis-neon w-full py-2.5 px-2.5 rounded-lg font-orbitron font-bold text-[10.5px] sm:text-[11px] tracking-wider flex items-center justify-center gap-1.5 text-center">
+            <span>📥</span>
+            <span class="truncate">DESCARGAR</span>
+          </button>
+
+          <button onclick="openViewCodeModal()" class="btn-secondary-hud w-full py-2.5 px-2.5 rounded-lg font-orbitron font-bold text-[10.5px] sm:text-[11px] tracking-wider text-neonGreen hover:text-white flex items-center justify-center gap-1.5 text-center">
+            <span>💻</span>
+            <span class="truncate">VER CÓDIGO</span>
+          </button>
+
+          <button onclick="toggleFavorite(this)" id="favorite-btn" class="btn-secondary-hud w-full py-2.5 px-2.5 rounded-lg font-orbitron font-bold text-[10.5px] sm:text-[11px] tracking-wider text-neonYellow hover:text-white flex items-center justify-center gap-1.5 text-center">
+            <span id="fav-icon">⭐</span>
+            <span id="fav-label" class="truncate">GUARDAR</span>
+          </button>
+
+          <button onclick="shareToWhatsApp()" class="btn-secondary-hud w-full py-2.5 px-2.5 rounded-lg font-orbitron font-bold text-[10.5px] sm:text-[11px] tracking-wider text-neonGreen hover:text-white flex items-center justify-center gap-1.5 text-center">
+            <span>💬</span>
+            <span class="truncate">COMPARTIR</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- PANEL DE DETALLES DEL PROYECTO -->
+      <section class="lg:col-span-6 details-hud-box p-4 sm:p-7 flex flex-col justify-center">
+        <h1 id="detail-title" class="font-orbitron font-extrabold text-xl sm:text-2xl lg:text-[28px] text-white tracking-wide break-words drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)]">
+          Cargando Archivo...
+        </h1>
+
+        <div class="mt-2.5">
+          <span id="detail-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded text-[11px] sm:text-xs font-orbitron font-bold tracking-wider bg-neonGreen/15 border border-neonGreen text-neonGreen shadow-[0_0_15px_rgba(0,255,178,0.2)]">
+            ✓ GRATIS • ACCESO LIBRE
+          </span>
+        </div>
+
+        <div id="detail-specs" class="mt-3 font-orbitron font-bold text-xs sm:text-[13px] tracking-wider text-neonCyan drop-shadow-[0_0_8px_rgba(0,229,255,0.4)] break-words">
+          HTML + CSS + JS
+        </div>
+
+        <p id="detail-description" class="mt-3 font-inter text-sm lg:text-[14.5px] text-[#B0B8CC] leading-[1.6] break-words">
+          Selecciona un archivo de la colección gratuita de Firebase abajo para visualizar sus especificaciones completas, ver su código fuente o renderizarlo en tiempo real.
+        </p>
+      </section>
+
+    </main>
+
+    <!-- CARRUSEL DE ARCHIVOS GRATIS -->
+    <section class="shrink-0 px-1 sm:px-6 pb-2.5 mt-6 sm:mt-8">
+      <div class="flex flex-wrap items-center justify-between gap-1.5 mb-1.5">
+        <h2 class="font-orbitron font-bold text-[11px] sm:text-xs tracking-[1.5px] uppercase text-[#8C9AB8]">
+          CATÁLOGO <span class="text-neonGreen drop-shadow-[0_0_8px_rgba(0,255,178,0.4)]">GRATIS (FIREBASE)</span>
+        </h2>
+        <span id="firebase-status" class="text-[9.5px] sm:text-[10px] font-mono text-neonGreen truncate">● CONECTANDO A FIREBASE...</span>
+      </div>
+
+      <div class="relative bg-[#060713]/90 border border-neonGreen/25 rounded-xl px-11 sm:px-12 py-2.5 flex items-center">
+        <button onclick="scrollCarousel(-1)" aria-label="Anterior" class="absolute left-1.5 z-20 w-9 h-10 rounded-lg bg-[#0B0F24]/95 hover:bg-neonGreen/20 border border-white/15 hover:border-neonGreen text-white/80 hover:text-neonGreen flex items-center justify-center transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+        </button>
+
+        <div id="carousel-track" class="flex items-stretch gap-3 overflow-x-auto no-scrollbar scroll-smooth w-full py-0.5">
+        </div>
+
+        <button onclick="scrollCarousel(1)" aria-label="Siguiente" class="absolute right-1.5 z-20 w-9 h-10 rounded-lg bg-[#0B0F24]/95 hover:bg-neonGreen/20 border border-white/15 hover:border-neonGreen text-white/80 hover:text-neonGreen flex items-center justify-center transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- FOOTER CON PLACAS HUD ADAPTABLES -->
+    <footer class="shrink-0 flex items-center justify-between border-t border-white/5 -mx-2.5 sm:-mx-5 mt-1 sm:mt-0">
+      <div class="hero-plaque-left px-3.5 sm:px-5 py-1.5 flex items-center gap-2">
+        <svg viewBox="0 0 64 64" class="w-4 h-4 sm:w-5 sm:h-5 drop-shadow-[0_0_8px_#00FFB2] shrink-0">
+          <path d="M12 8 H38 C48 8 54 14 54 23 C54 31 48 36 40 37 L54 56 H41 L28 38 H22 V56 H12 Z M22 17 V29 H36 C41 29 44 27 44 23 C44 19 41 17 36 17 Z" fill="url(#rLogoGrad)" />
+        </svg>
+        <div class="flex flex-col">
+          <span class="font-orbitron font-extrabold text-[9.5px] sm:text-[10px] tracking-wider text-white leading-tight">RAFAEL CODEX</span>
+          <span class="font-orbitron font-bold text-[7px] sm:text-[7.5px] tracking-[1.5px] sm:tracking-[2px] text-neonGreen/70 uppercase">SISTEMAS GRATIS</span>
+        </div>
+      </div>
+
+      <div class="hidden md:flex items-center gap-10 opacity-70">
+        <div class="w-28 h-[2.5px] bg-gradient-to-r from-transparent via-neonGreen to-neonCyan rounded-full"></div>
+        <div class="w-28 h-[2.5px] bg-gradient-to-r from-neonBlue via-neonGreen to-transparent rounded-full"></div>
+      </div>
+
+      <div class="hero-plaque-right px-4 sm:px-6 py-1.5">
+        <span class="font-orbitron font-bold text-[11px] sm:text-xs tracking-widest text-white">2026</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- MODAL UNIVERSAL A PANTALLA COMPLETA EN MÓVIL -->
+  <div id="universal-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/95 backdrop-blur-md p-0 sm:p-4">
+    <div class="player-hud-box w-screen h-[100dvh] sm:w-[95vw] sm:max-w-[95vw] sm:h-[92vh] p-2.5 sm:p-5 relative flex flex-col rounded-none sm:rounded-xl border-0 sm:border sm:border-neonCyan/30 overflow-hidden">
+      
+      <button onclick="closeModal()" aria-label="Cerrar modal" class="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 z-50 min-w-[40px] min-h-[40px] w-10 h-10 rounded-lg bg-black/80 hover:bg-neonGreen/30 border border-neonGreen/50 flex items-center justify-center text-white text-base font-bold transition shadow-[0_0_12px_rgba(0,0,0,0.8)]">
+        ✕
+      </button>
+
+      <div id="modal-body-content" class="flex-1 w-full h-full overflow-hidden flex flex-col pt-1 sm:pt-0"></div>
+    </div>
+  </div>
+
+<script>
+'use strict';
+
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80';
+const FAVORITES_COLLECTION = 'favoritos';
+const GUEST_ID_KEY = 'neonGuestId';
+const LOCAL_FAVS_CACHE_KEY = 'rafael_codex_favs_local';
+
+let audioCtx = null;
+window.freeProjectsList = [];
+window.activeFreeProject = null;
+
+function playUISound(freq = 640) {
+    try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!audioCtx) audioCtx = new AudioContextClass();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const oscillator = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+        oscillator.connect(gain);
+        gain.connect(audioCtx.destination);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.08);
+    } catch (error) {
+        console.warn('Audio no disponible:', error);
+    }
+}
+window.playUISound = playUISound;
+
+window.addEventListener('pointermove', event => {
+    const cursor = document.getElementById('neon-cursor');
+    if (cursor) {
+        cursor.style.left = event.clientX + 'px';
+        cursor.style.top = event.clientY + 'px';
+    }
+});
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[char]);
+}
+
+function normalize(value) {
+    return String(value ?? '').trim().toLowerCase();
+}
+
+function firstValue(data, keys) {
+    for (const key of keys) {
+        const value = data[key];
+        if (value !== undefined && value !== null && String(value).trim() !== '') {
+            return value;
+        }
+    }
+    return '';
+}
+
+function isFreeDocument(data) {
+    const type = normalize(firstValue(data, ['tipo', 'type', 'plan', 'acceso', 'estado']));
+    const priceRaw = firstValue(data, ['precio', 'price', 'costo']);
+    const price = Number(priceRaw);
+    if (['premium', 'pro', 'exclusivo', 'pago'].some(word => type.includes(word))) {
+        return false;
+    }
+    return (
+        ['gratis', 'free', 'gratuito', 'gratuita'].some(word => type.includes(word)) ||
+        (priceRaw !== '' && Number.isFinite(price) && price === 0)
+    );
+}
+
+function mapFirestoreDocument(docSnap) {
+    const data = docSnap.data();
+    const nombre = firstValue(data, ['nombre', 'titulo', 'title', 'name']);
+    if (!nombre) return null;
+    const codigo = firstValue(data, ['codigo', 'sourceCode', 'codigoHTML', 'codigoHtml', 'html', 'contenido']);
+    const preview = firstValue(data, ['animacionHtml', 'previewHtml', 'vistaPrevia', 'vista_previa', 'demoHtml', 'htmlPreview']);
+
+    return {
+        id: docSnap.id,
+        title: String(nombre),
+        tipo: 'GRATIS',
+        categoria: String(firstValue(data, ['categoria', 'lenguaje', 'tecnologia', 'tipoArchivo']) || 'HTML + CSS + JS'),
+        imagen: String(firstValue(data, ['imagen', 'image', 'thumbnail', 'portada', 'urlImagen']) || FALLBACK_IMAGE),
+        descripcion: String(firstValue(data, ['descripcion', 'description', 'detalle']) || 'Proyecto gratuito de Rafael-Codex.'),
+        codigo: typeof codigo === 'string' ? codigo : '',
+        animacionHtml: typeof preview === 'string' ? preview : ''
+    };
+}
+
+window.renderFreeCarousel = function() {
+    const track = document.getElementById('carousel-track');
+    if (!track) return;
+    const projects = window.freeProjectsList;
+    if (!projects.length) {
+        track.innerHTML = `
+            <div class="w-full text-center py-8 text-gray-400 font-mono text-xs">
+                NO HAY PROYECTOS GRATUITOS DISPONIBLES.
+            </div>
+        `;
+        return;
+    }
+
+    track.innerHTML = projects.map(item => {
+        const selected = window.activeFreeProject?.id === item.id;
+        return `
+            <button
+                type="button"
+                onclick="selectFreeProject('${escapeHtml(item.id)}')"
+                class="carousel-card ${selected ? 'active-card' : ''} shrink-0 w-48 overflow-hidden text-left"
+            >
+                <div class="relative h-24 overflow-hidden bg-black">
+                    <img
+                        src="${escapeHtml(item.imagen)}"
+                        alt="${escapeHtml(item.title)}"
+                        class="w-full h-full object-cover"
+                        onerror="this.src='${FALLBACK_IMAGE}'"
+                    >
+                    <span class="absolute top-2 left-2 text-[9px] font-bold bg-black/80 text-neonGreen px-2 py-1 rounded">
+                        ✓ GRATIS
+                    </span>
+                </div>
+                <div class="p-3">
+                    <h3 class="text-white text-xs font-bold truncate">
+                        ${escapeHtml(item.title)}
+                    </h3>
+                    <p class="text-neonCyan text-[9px] mt-2 font-mono">
+                        ${escapeHtml(item.categoria)}
+                    </p>
+                </div>
+            </button>
+        `;
+    }).join('');
+};
+
+window.selectFreeProject = function(id) {
+    const project = window.freeProjectsList.find(item => item.id === id);
+    if (!project) return;
+    playUISound(740);
+    window.activeFreeProject = project;
+    const image = document.getElementById('main-preview-img');
+    if (image) {
+        image.src = project.imagen;
+        image.onerror = () => {
+            image.onerror = null;
+            image.src = FALLBACK_IMAGE;
+        };
+    }
+    document.getElementById('visor-top-title').textContent = project.title;
+    document.getElementById('detail-title').textContent = project.title;
+    document.getElementById('detail-badge').textContent = '✓ GRATIS • ACCESO LIBRE';
+    document.getElementById('detail-specs').textContent = project.categoria;
+    document.getElementById('detail-description').textContent = project.descripcion;
+    window.renderFreeCarousel();
+    if (typeof window.syncFavoriteButton === 'function') {
+        window.syncFavoriteButton();
+    }
+};
+
+window.scrollCarousel = function(direction) {
+    playUISound(580);
+    document.getElementById('carousel-track')?.scrollBy({
+        left: direction * 260,
+        behavior: 'smooth'
+    });
+};
+
+window.toggleThreeDotsMenu = function(event) {
+    event.stopPropagation();
+    playUISound(600);
+    document.getElementById('three-dots-dropdown')?.classList.toggle('hidden');
+};
+
+document.addEventListener('click', () => {
+    document.getElementById('three-dots-dropdown')?.classList.add('hidden');
+});
+
+function openModalWithHTML(markup) {
+    const modal = document.getElementById('universal-modal');
+    const body = document.getElementById('modal-body-content');
+    if (!modal || !body) return;
+    body.innerHTML = markup;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+window.closeModal = function() {
+    const modal = document.getElementById('universal-modal');
+    const body = document.getElementById('modal-body-content');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    body.innerHTML = '';
+};
+
+function showNotice(title, message) {
+    openModalWithHTML(`
+        <div class="text-center py-8">
+            <h2 class="font-orbitron text-neonGreen text-xl mb-5">
+                ✦ ${escapeHtml(title)} ✦
+            </h2>
+            <p class="text-gray-300 text-sm mb-8">
+                ${escapeHtml(message)}
+            </p>
+            <button onclick="closeModal()"
+                class="btn-gratis-neon px-8 py-3 rounded-lg">
+                ACEPTAR
+            </button>
+        </div>
+    `);
+}
+
+async function copyText(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch (error) {
+        const area = document.createElement('textarea');
+        area.value = text;
+        document.body.appendChild(area);
+        area.select();
+        const success = document.execCommand('copy');
+        area.remove();
+        return success;
+    }
+}
+
+function currentShareUrl() {
+    const project = window.activeFreeProject;
+    const url = new URL(window.location.href);
+    if (project) {
+        url.searchParams.set('id', project.id);
+    }
+    return url.toString();
+}
+
+window.copyCurrentShareLink = async function() {
+    const project = window.activeFreeProject;
+    if (!project) return;
+    const success = await copyText(currentShareUrl());
+    showNotice(
+        success ? 'ENLACE COPIADO' : 'ERROR',
+        success ? 'El enlace está listo para compartir.' : 'No se pudo copiar el enlace.'
+    );
+};
+
+window.downloadActiveCode = function() {
+    const project = window.activeFreeProject;
+    if (!project) return;
+    if (!project.codigo.trim()) {
+        showNotice('CÓDIGO NO DISPONIBLE', 'Este proyecto no tiene código fuente guardado.');
+        return;
+    }
+    const blob = new Blob([project.codigo], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = project.title.replace(/[^\w-]+/g, '_') + '.html';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+window.openViewCodeModal = function() {
+    const project = window.activeFreeProject;
+    if (!project) return;
+    if (!project.codigo) {
+        showNotice('CÓDIGO NO DISPONIBLE', 'No existe código fuente para este proyecto.');
+        return;
+    }
+    openModalWithHTML(`
+        <h2 class="font-orbitron text-neonGreen text-xl mb-4">
+            ✦ CÓDIGO FUENTE
+        </h2>
+        <h3 class="text-white mb-4">${escapeHtml(project.title)}</h3>
+        <div class="flex gap-3 mb-4">
+            <button onclick="copyModalCode()" class="btn-gratis-neon px-4 py-2 rounded">
+                COPIAR
+            </button>
+            <button onclick="downloadActiveCode()" class="btn-secondary-hud px-4 py-2 rounded text-white">
+                DESCARGAR
+            </button>
+        </div>
+        <pre class="bg-black/70 border border-neonCyan/30 rounded-lg p-4 text-xs text-neonGreen overflow-auto max-h-[55vh]"><code id="modal-code-text">${escapeHtml(project.codigo)}</code></pre>
+    `);
+};
+
+window.copyModalCode = async function() {
+    const code = document.getElementById('modal-code-text')?.textContent || '';
+    const success = await copyText(code);
+    showNotice(
+        success ? 'CÓDIGO COPIADO' : 'ERROR',
+        success ? 'Código copiado correctamente.' : 'No se pudo copiar.'
+    );
+};
+
+window.openVisualizationModal = function() {
+    const project = window.activeFreeProject;
+    if (!project) return;
+    const preview = project.animacionHtml || project.codigo;
+    if (!preview.trim()) {
+        showNotice('VISTA NO DISPONIBLE', 'Este proyecto no contiene una vista previa.');
+        return;
+    }
+    
+    // CAMBIO AQUÍ: El iframe ahora ocupa el 100% de ancho y alto
+    openModalWithHTML(`
+        <div class="flex flex-col h-full w-full">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="font-orbitron text-neonCyan text-sm sm:text-lg">⚡ VISUALIZACIÓN EN VIVO</h2>
+                <h3 class="text-white text-xs sm:text-sm truncate ml-4">${escapeHtml(project.title)}</h3>
+            </div>
+            <iframe
+                id="project-preview-frame"
+                class="w-full flex-1 bg-white rounded-lg"
+                style="width:100%; height:100%; border:0;"
+                sandbox="allow-scripts allow-forms allow-modals"
+                title="Vista previa del proyecto"
+            ></iframe>
+        </div>
+    `);
+    document.getElementById('project-preview-frame').srcdoc = preview;
+};
+
+/* =========================================================================
+   SISTEMA DE FAVORITOS SINCRONIZADO CON FIREBASE (E INDEX.HTML) + RESPALDO LOCAL
+   ========================================================================= */
+function getGuestId() {
+    let id = localStorage.getItem(GUEST_ID_KEY);
+    if (!id) {
+        id = 'guest_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        localStorage.setItem(GUEST_ID_KEY, id);
+    }
+    return id;
+}
+
+function favoriteDocId(projectId) {
+    return getGuestId() + '_' + projectId;
+}
+
+function getFavoriteRef(projectId) {
+    return window.__doc(window.__db, FAVORITES_COLLECTION, favoriteDocId(projectId));
+}
+
+function getLocalFavoritesMap() {
+    try {
+        const raw = localStorage.getItem(LOCAL_FAVS_CACHE_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function saveLocalFavoriteItem(project) {
+    try {
+        const map = getLocalFavoritesMap();
+        map[project.id] = {
+            guestId: getGuestId(),
+            projectId: project.id,
+            projectTitle: project.title,
+            projectImage: project.imagen,
+            projectCategoria: project.categoria,
+            projectType: 'GRATIS',
+            fecha: Date.now()
+        };
+        localStorage.setItem(LOCAL_FAVS_CACHE_KEY, JSON.stringify(map));
+    } catch (e) {}
+}
+
+function removeLocalFavoriteItem(projectId) {
+    try {
+        const map = getLocalFavoritesMap();
+        delete map[projectId];
+        localStorage.setItem(LOCAL_FAVS_CACHE_KEY, JSON.stringify(map));
+    } catch (e) {}
+}
+
+async function isFavorite(projectId) {
+    if (!projectId) return false;
+    try {
+        if (window.__db && window.__getDoc && window.__doc) {
+            const snap = await window.__getDoc(getFavoriteRef(projectId));
+            if (snap.exists()) {
+                return true;
+            }
+        }
+    } catch (error) {
+        console.warn('Comprobando favorito desde caché local:', error);
+    }
+    const localMap = getLocalFavoritesMap();
+    return Boolean(localMap[projectId]);
+}
+
+window.toggleFavorite = async function(btn) {
+    const project = window.activeFreeProject;
+    if (!project) {
+        showNotice('SIN PROYECTO', 'Primero selecciona un proyecto.');
+        return;
+    }
+
+    const icon = document.getElementById('fav-icon');
+    const label = document.getElementById('fav-label');
+    if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+    }
+
+    try {
+        const currentlyFav = await isFavorite(project.id);
+
+        if (currentlyFav) {
+            removeLocalFavoriteItem(project.id);
+            if (window.__db && window.__deleteDoc) {
+                try {
+                    await window.__deleteDoc(getFavoriteRef(project.id));
+                } catch (err) {
+                    console.warn('Error borrando en Firestore (eliminado localmente):', err);
+                }
+            }
+            if (icon) icon.textContent = '⭐';
+            if (label) label.textContent = 'GUARDAR';
+            if (btn) btn.classList.remove('text-neonYellow');
+            playUISound(400);
+        } else {
+            const favPayload = {
+                guestId: getGuestId(),
+                projectId: project.id,
+                projectTitle: project.title,
+                projectImage: project.imagen,
+                projectCategoria: project.categoria,
+                projectType: 'GRATIS',
+                fecha: window.__serverTimestamp ? window.__serverTimestamp() : Date.now()
+            };
+            saveLocalFavoriteItem(project);
+            if (window.__db && window.__setDoc) {
+                try {
+                    await window.__setDoc(getFavoriteRef(project.id), favPayload);
+                } catch (err) {
+                    console.warn('Error guardando en Firestore (guardado localmente):', err);
+                }
+            }
+            if (icon) icon.textContent = '🌟';
+            if (label) label.textContent = 'GUARDADO';
+            if (btn) btn.classList.add('text-neonYellow');
+            playUISound(820);
+        }
+
+        if (typeof window.updateFavCountBadge === 'function') {
+            await window.updateFavCountBadge();
+        }
+
+        if (btn) {
+            btn.classList.add('scale-110');
+            setTimeout(() => btn.classList.remove('scale-110'), 200);
+        }
+    } catch (error) {
+        console.error('Error favorito:', error);
+        showNotice('ERROR', 'No se pudo guardar. Intenta de nuevo.');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }
+    }
+};
+
+window.syncFavoriteButton = async function() {
+    const project = window.activeFreeProject;
+    const btn = document.getElementById('favorite-btn');
+    const icon = document.getElementById('fav-icon');
+    const label = document.getElementById('fav-label');
+    if (!btn || !project) return;
+    const fav = await isFavorite(project.id);
+    if (fav) {
+        icon.textContent = '🌟';
+        label.textContent = 'GUARDADO';
+        btn.classList.add('text-neonYellow');
+    } else {
+        icon.textContent = '⭐';
+        label.textContent = 'GUARDAR';
+        btn.classList.remove('text-neonYellow');
+    }
+};
+
+async function fetchAllUserFavorites() {
+    const combinedMap = { ...getLocalFavoritesMap() };
+    if (window.__db && window.__getDocs && window.__query && window.__collection && window.__where) {
+        try {
+            const q = window.__query(
+                window.__collection(window.__db, FAVORITES_COLLECTION),
+                window.__where('guestId', '==', getGuestId())
+            );
+            const result = await window.__getDocs(q);
+            result.docs.forEach(docSnap => {
+                const data = docSnap.data();
+                if (data && data.projectId) {
+                    combinedMap[data.projectId] = data;
+                }
+            });
+            try {
+                localStorage.setItem(LOCAL_FAVS_CACHE_KEY, JSON.stringify(combinedMap));
+            } catch (e) {}
+        } catch (err) {
+            console.warn('Usando respaldo local para listar favoritos:', err);
+        }
+    }
+    return Object.values(combinedMap);
+}
+
+window.openFavoritesModal = async function() {
+    openModalWithHTML(`
+        <h2 class="font-orbitron text-neonYellow text-xl mb-4 text-center">
+            ⭐ MIS FAVORITOS
+        </h2>
+        <div id="fav-loading" class="text-center py-8 text-gray-400 font-mono text-xs">
+            CARGANDO...
+        </div>
+        <div id="fav-list" class="hidden space-y-2 max-h-[55vh] overflow-auto"></div>
+    `);
+    try {
+        const favoritesList = await fetchAllUserFavorites();
+        const loadingEl = document.getElementById('fav-loading');
+        const list = document.getElementById('fav-list');
+        if (loadingEl) loadingEl.classList.add('hidden');
+        if (!list) return;
+        list.classList.remove('hidden');
+
+        if (!favoritesList.length) {
+            list.innerHTML = `
+                <p class="text-center text-gray-400 text-sm py-8">
+                    Aún no tienes favoritos guardados.
+                </p>
+            `;
+            return;
+        }
+
+        list.innerHTML = favoritesList.map(f => {
+            return `
+                <div class="bg-black/50 border border-neonYellow/30 rounded-lg p-3 flex items-center gap-3">
+                    <img src="${escapeHtml(f.projectImage || FALLBACK_IMAGE)}"
+                        class="w-12 h-12 rounded object-cover bg-black"
+                        onerror="this.src='${FALLBACK_IMAGE}'">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-white text-xs font-bold truncate">${escapeHtml(f.projectTitle || 'Proyecto sin título')}</p>
+                        <p class="text-neonCyan text-[10px] font-mono">${escapeHtml(f.projectCategoria || '')}</p>
+                    </div>
+                    <button onclick="goToFavorite('${escapeHtml(f.projectId)}')"
+                        class="btn-gratis-neon px-3 py-1 rounded text-[10px]">
+                        ABRIR
+                    </button>
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error cargando favoritos:', error);
+        const loadingEl = document.getElementById('fav-loading');
+        if (loadingEl) loadingEl.textContent = 'Error al cargar favoritos.';
+    }
+};
+
+window.goToFavorite = function(projectId) {
+    closeModal();
+    const existsInFree = window.freeProjectsList.some(item => item.id === projectId);
+    if (existsInFree) {
+        setTimeout(() => {
+            if (typeof window.selectFreeProject === 'function') {
+                window.selectFreeProject(projectId);
+            }
+        }, 200);
+    } else {
+        window.location.href = 'gratis.html?id=' + encodeURIComponent(projectId);
+    }
+};
+
+window.updateFavCountBadge = async function() {
+    const badge = document.getElementById('fav-count-badge');
+    if (!badge) return;
+    try {
+        const favoritesList = await fetchAllUserFavorites();
+        const count = favoritesList.length;
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : String(count);
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    } catch (error) {
+        console.warn('Error actualizando badge:', error);
+    }
+};
+
+window.shareToWhatsApp = function() {
+    const project = window.activeFreeProject;
+    if (!project) return;
+    const message =
+        '¡Hola! Quiero compartir este proyecto gratuito de Rafael-Codex:\n\n' +
+        project.title + '\n' +
+        currentShareUrl();
+    window.open(
+        'https://wa.me/?text=' + encodeURIComponent(message),
+        '_blank',
+        'noopener,noreferrer'
+    );
+};
+
+document.getElementById('universal-modal').addEventListener('click', event => {
+    if (event.target.id === 'universal-modal') {
+        window.closeModal();
+    }
+});
+
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') window.closeModal();
+});
+
+function loadProjectsFromCache() {
+    try {
+        const raw = localStorage.getItem('neonProjectsCache');
+        if (!raw) return false;
+        const cached = JSON.parse(raw);
+        const ageHours = (Date.now() - cached.timestamp) / (1000 * 60 * 60);
+        if (ageHours > 24 || !Array.isArray(cached.projects) || !cached.projects.length) {
+            return false;
+        }
+        window.freeProjectsList = cached.projects;
+        const requestedId = new URLSearchParams(location.search).get('id');
+        window.activeFreeProject =
+            cached.projects.find(p => p.id === requestedId) ||
+            cached.projects[0];
+        window.selectFreeProject(window.activeFreeProject.id);
+        const status = document.getElementById('firebase-status');
+        if (status) {
+            status.textContent = '● MODO OFFLINE • CACHÉ';
+            status.style.color = '#FFD166';
+        }
+        return true;
+    } catch (error) {
+        console.warn('Error leyendo caché:', error);
+        return false;
+    }
+}
+
+async function sincronizarProyectosGratis(retryCount = 0) {
+    const status = document.getElementById('firebase-status');
+    function setStatus(message, color = '#00FFB2') {
+        if (status) {
+            status.textContent = message;
+            status.style.color = color;
+        }
+    }
+
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('TIMEOUT')), 8000);
+    });
+
+    try {
+        setStatus('● CONECTANDO A FIREBASE...');
+        const firebaseLogic = async () => {
+            const { initializeApp, getApps } =
+                await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+            const {
+                getFirestore,
+                initializeFirestore,
+                persistentLocalCache,
+                persistentMultipleTabManager,
+                collection,
+                getDocs,
+                addDoc,
+                doc,
+                getDoc,
+                setDoc,
+                deleteDoc,
+                query,
+                where,
+                orderBy,
+                serverTimestamp
+            } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+
+            window.__addDoc = addDoc;
+            window.__collection = collection;
+            window.__getDocs = getDocs;
+            window.__doc = doc;
+            window.__getDoc = getDoc;
+            window.__setDoc = setDoc;
+            window.__deleteDoc = deleteDoc;
+            window.__query = query;
+            window.__where = where;
+            window.__serverTimestamp = serverTimestamp;
+
+            const firebaseConfig = {
+                apiKey: 'AIzaSyBobMKnrJxr-ouoDzw4WRIsMqF0sSg8uWo',
+                authDomain: 'rafael-store-582.firebaseapp.com',
+                projectId: 'rafael-store-582',
+                storageBucket: 'rafael-store-582.firebasestorage.app',
+                messagingSenderId: '730635979630',
+                appId: '1:730635979630:web:78fc28958d44e9bb6c0f7f'
+            };
+
+            const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+            let db;
+            try {
+                db = initializeFirestore(app, {
+                    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+                });
+            } catch (e) {
+                db = getFirestore(app);
+            }
+
+            window.__db = db;
+            window.__favDb = db;
+            window.__favFirestore = { getDocs, query, where, collection };
+
+            // Actualizar contador del libro y estado del botón apenas conecta Firebase
+            await window.updateFavCountBadge();
+            if (window.activeFreeProject) {
+                await window.syncFavoriteButton();
+            }
+
+            const filesRef = collection(db, 'archivos');
+            let snapshot;
+            try {
+                snapshot = await getDocs(query(filesRef, orderBy('timestamp', 'desc')));
+            } catch (error) {
+                snapshot = await getDocs(filesRef);
+            }
+
+            const freeProjects = [];
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                if (isFreeDocument(data)) {
+                    const project = mapFirestoreDocument(docSnap);
+                    if (project) {
+                        freeProjects.push(project);
+                    }
+                }
+            });
+
+            if (!freeProjects.length) {
+                window.freeProjectsList = [];
+                window.activeFreeProject = null;
+                window.renderFreeCarousel();
+                document.getElementById('detail-title').textContent = 'No hay archivos gratuitos';
+                document.getElementById('visor-top-title').textContent = 'Catálogo vacío';
+                document.getElementById('detail-description').textContent = 'No se encontraron documentos gratuitos en la colección archivos.';
+                setStatus('● FIREBASE CONECTADO • SIN ARCHIVOS GRATIS', '#FFD166');
+                return;
+            }
+
+            window.freeProjectsList = freeProjects;
+            try {
+                localStorage.setItem('neonProjectsCache', JSON.stringify({
+                    timestamp: Date.now(),
+                    projects: freeProjects
+                }));
+            } catch (e) {}
+
+            const requestedId = new URLSearchParams(location.search).get('id');
+            window.activeFreeProject =
+                freeProjects.find(project => project.id === requestedId) ||
+                freeProjects[0];
+
+            window.selectFreeProject(window.activeFreeProject.id);
+            setStatus('● FIREBASE CONECTADO • ' + freeProjects.length + ' ARCHIVOS GRATIS');
+        };
+
+        await Promise.race([firebaseLogic(), timeoutPromise]);
+
+    } catch (error) {
+        if (error.message === 'TIMEOUT') {
+            if (window.freeProjectsList.length) {
+                setStatus('● MODO OFFLINE • FIREBASE LENTO', '#FFD166');
+                return;
+            }
+            if (retryCount < 2) {
+                setStatus(`● REINTENTANDO (${retryCount + 1}/2)...`, '#FFD166');
+                await new Promise(r => setTimeout(r, 2000));
+                return sincronizarProyectosGratis(retryCount + 1);
+            }
+            setStatus('● FIREBASE LENTO • REINTENTA', '#FFD166');
+            document.getElementById('detail-title').textContent = 'Conexión lenta';
+            document.getElementById('detail-description').textContent = 'Firebase está tardando. Verifica tu internet o recarga la página.';
+            return;
+        }
+
+        setStatus('● ERROR DE CONEXIÓN FIREBASE', '#FF5555');
+        if (window.freeProjectsList.length) return;
+        document.getElementById('detail-title').textContent = 'Error de conexión';
+        document.getElementById('detail-description').textContent = 'No se pudo conectar con Firebase. Revisa la consola del navegador para conocer el error.';
+    }
+}
+
+const hasCache = loadProjectsFromCache();
+window.updateFavCountBadge();
+
+setTimeout(() => {
+    sincronizarProyectosGratis();
+}, hasCache ? 300 : 0);
+</script>
+</body>
+</html>
